@@ -187,6 +187,78 @@ app.MapPost("/api/login", async (
     });
 });
 
+// REGISTER ENDPOINT
+app.MapPost("/api/register", async (
+    RegisterRequest request,
+    AppDbContext db,
+    IPasswordHasher<AppUser> hasher) =>
+{
+    if (string.IsNullOrWhiteSpace(request.Username) ||
+        string.IsNullOrWhiteSpace(request.Password))
+    {
+        return Results.BadRequest(new
+        {
+            message = "Enter a username and password."
+        });
+    }
+
+    var username = request.Username.Trim();
+
+    if (username.Length < 3 || username.Length > 32)
+    {
+        return Results.BadRequest(new
+        {
+            message = "Your username must be between 3 and 32 characters."
+        });
+    }
+
+    if (request.Password.Length < 8)
+    {
+        return Results.BadRequest(new
+        {
+            message = "Your password must be at least 8 characters."
+        });
+    }
+
+    if (await db.Users.AnyAsync(user => user.Username == username))
+    {
+        return Results.Conflict(new
+        {
+            message = "That username is already taken. Try another one."
+        });
+    }
+
+    var user = new AppUser
+    {
+        Username = username
+    };
+
+    user.PasswordHash = hasher.HashPassword(user, request.Password);
+    db.Users.Add(user);
+
+    try
+    {
+        await db.SaveChangesAsync();
+    }
+    catch (DbUpdateException)
+    {
+        if (await db.Users.AnyAsync(existing => existing.Username == username))
+        {
+            return Results.Conflict(new
+            {
+                message = "That username is already taken. Try another one."
+            });
+        }
+
+        throw;
+    }
+
+    return Results.Created("/login.html", new
+    {
+        message = "Your account is ready. You can log in now."
+    });
+});
+
 // CURRENT USER ENDPOINT
 // Accessible only to signed-in users.
 app.MapGet("/api/me", (HttpContext context) =>
@@ -214,6 +286,11 @@ app.Run();
 
 // Defines the login data received from JavaScript.
 public record LoginRequest(
+    string? Username,
+    string? Password
+);
+
+public record RegisterRequest(
     string? Username,
     string? Password
 );

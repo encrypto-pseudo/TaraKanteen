@@ -176,6 +176,10 @@
     .auth-submit { width: 100%; min-height: 48px; border: 0; border-radius: 11px; background: var(--green); color: white; font-size: 13px; font-weight: 800; cursor: pointer; transition: background .2s, transform .2s; }
     .auth-submit:hover { transform: translateY(-1px); background: #183b2e; }
     .auth-notice { min-height: 20px; margin: 12px 0 0; color: #a65b39; font-size: 12px; line-height: 1.5; }
+    .auth-notice.success { color: #526d43; }
+    .auth-switch { margin: 8px 0 0; color: var(--muted); font-size: 12px; text-align: center; }
+    .auth-switch a { color: #526d43; font-weight: 750; }
+    .auth-switch a:hover { text-decoration: underline; }
     .auth-footer { padding: 20px 24px; border-top: 1px solid var(--line); color: #748178; text-align: center; font-size: 11px; }
 
     @media (max-width: 850px) {

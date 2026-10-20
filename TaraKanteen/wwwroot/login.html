@@ -30,12 +30,12 @@
       <section class="auth-form-panel" aria-labelledby="loginHeading">
         <div class="auth-form-content">
           <h2 id="loginHeading">Welcome back</h2>
-          <p class="auth-intro">Log in with your school account to continue to your tray.</p>
+          <p class="auth-intro">Log in with your username to continue to your tray.</p>
 
           <form id="loginForm">
-            <label class="auth-field" for="email">
-              <span>School email</span>
-              <input class="auth-input" id="email" name="email" type="email" placeholder="you@school.edu" autocomplete="username" required>
+            <label class="auth-field" for="username">
+              <span>Username</span>
+              <input class="auth-input" id="username" name="username" type="text" placeholder="Your username" autocomplete="username" required>
             </label>
 
             <label class="auth-field" for="password">
@@ -54,6 +54,7 @@
             <button class="auth-submit" type="submit">Log in</button>
             <p class="auth-notice" id="loginNotice" role="status" aria-live="polite"></p>
           </form>
+          <p class="auth-switch">New to TaraKanteen? <a href="register.html">Create an account</a></p>
         </div>
       </section>
     </div>
@@ -62,6 +63,7 @@
   <footer class="auth-footer">Good food. More school day. © <span id="year"></span></footer>
 
   <script>
+    const usernameInput = document.querySelector("#username");
     const passwordInput = document.querySelector("#password");
     const togglePassword = document.querySelector("#togglePassword");
     const loginForm = document.querySelector("#loginForm");
@@ -74,9 +76,31 @@
       togglePassword.setAttribute("aria-pressed", String(!isVisible));
     });
 
-    loginForm.addEventListener("submit", event => {
+    loginForm.addEventListener("submit", async event => {
       event.preventDefault();
-      loginNotice.textContent = "Sign-in is not connected yet. Please contact your school administrator for access.";
+      loginNotice.textContent = "";
+      loginNotice.classList.remove("success");
+
+      try {
+        const response = await fetch("/api/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            username: usernameInput.value,
+            password: passwordInput.value
+          })
+        });
+        const result = await response.json();
+
+        if (!response.ok) {
+          loginNotice.textContent = result.message || "Unable to log in. Please try again.";
+          return;
+        }
+
+        window.location.href = "index.html";
+      } catch {
+        loginNotice.textContent = "Could not connect. Please try again in a moment.";
+      }
     });
 
     document.querySelector("#year").textContent = String(new Date().getFullYear());
