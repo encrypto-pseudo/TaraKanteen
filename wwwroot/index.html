@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f8f7f1">
+  <meta name="description" content="Order fresh, tasty school meals online with TaraKanteen. Skip the line and enjoy more of your break.">
+  <title>TaraKanteen — Good food. More school day.</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="announcement">Freshly made for your school day <strong>· Order ahead and skip the queue!</strong></div>
+  <header>
+    <nav class="nav shell" aria-label="Main navigation">
+      <a class="brand" href="#" aria-label="TaraKanteen home"><span class="brand-mark">🥗</span> taraKanteen</a>
+      <div class="nav-links">
+        <a href="#menu">Our menu</a>
+        <a href="#how-it-works">How it works</a>
+        <a href="#about">About us</a>
+      </div>
+      <div class="nav-actions">
+        <a class="login" href="login.html">Log in</a>
+        <a class="login" href="register.html">Sign up</a>
+        <button class="cart-button" type="button" id="cartButton" aria-label="Shopping cart, 0 items">Your tray <span id="cartCount">0</span></button>
+      </div>
+    </nav>
+  </header>
+
+  <main>
+    <section class="hero shell">
+      <div class="hero-grid">
+        <div>
+          <p class="eyebrow">Your campus canteen, reimagined</p>
+          <h1>Good food.<br>More <em>school day.</em></h1>
+          <p class="hero-copy">Your favorite canteen meals, ready when you are. Order online, skip the line, and make every break a little tastier.</p>
+          <div class="hero-actions">
+            <a class="primary-link" href="#menu">Explore the menu <span aria-hidden="true">↗</span></a>
+            <span class="small-note">Made fresh on campus</span>
+          </div>
+        </div>
+        <div class="hero-art" aria-label="Illustration of a fresh, colorful meal">
+          <div class="art-circle"></div>
+          <span class="spark spark-one" aria-hidden="true">✳</span>
+          <span class="spark spark-two" aria-hidden="true">✦</span>
+          <div class="food-bowl" aria-hidden="true">🍛</div>
+          <div class="floating-note note-one"><strong><span class="note-icon">🌱</span>Freshly prepared</strong><small>Good food, good energy</small></div>
+          <div class="floating-note note-two"><strong><span class="note-icon">⏱️</span>Ready at break</strong><small>Your time is yours</small></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="trust-strip" aria-label="Why students love TaraKanteen">
+      <div class="trust-inner shell">
+        <div class="trust-item"><span class="trust-icon">🥬</span> Fresh every day</div>
+        <div class="trust-item"><span class="trust-icon">💳</span> Easy, cashless checkout</div>
+        <div class="trust-item"><span class="trust-icon">⚡</span> Skip the canteen queue</div>
+        <div class="trust-item"><span class="trust-icon">💚</span> Made for student budgets</div>
+      </div>
+    </section>
+
+    <section class="menu-section shell" id="menu">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">A little something for everyone</p>
+          <h2>Today’s favorites</h2>
+          <p>Fresh picks from your campus kitchen.</p>
+        </div>
+        <div class="menu-tools">
+          <label class="search-wrap">
+            <span aria-hidden="true">⌕</span>
+            <input class="search" id="menuSearch" type="search" placeholder="Find something tasty" aria-label="Search menu">
+          </label>
+        </div>
+      </div>
+      <div class="categories" role="group" aria-label="Filter menu by category">
+        <button class="category active" type="button" data-category="all" aria-pressed="true">Everything</button>
+        <button class="category" type="button" data-category="meals" aria-pressed="false">Rice meals</button>
+        <button class="category" type="button" data-category="snacks" aria-pressed="false">Snacks</button>
+        <button class="category" type="button" data-category="drinks" aria-pressed="false">Drinks</button>
+      </div>
+      <div class="menu-grid" id="menuGrid" aria-live="polite"></div>
+    </section>
+
+    <section class="how-section" id="how-it-works">
+      <div class="shell">
+        <div class="how-heading">
+          <p class="eyebrow">Your break, made better</p>
+          <h2>Lunch is just three taps away.</h2>
+        </div>
+        <div class="steps">
+          <article class="step"><span class="step-number">01</span><h3>Pick your favorites</h3><p>Browse the menu and find something that hits the spot.</p></article>
+          <article class="step"><span class="step-number">02</span><h3>Order before the bell</h3><p>Place your order online and choose when you want it.</p></article>
+          <article class="step"><span class="step-number">03</span><h3>Grab and enjoy</h3><p>Head to the pickup counter. Your break is all yours.</p></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="cta shell" id="about">
+      <div class="cta-card">
+        <div class="cta-copy">
+          <p class="eyebrow">The good part of your day</p>
+          <h2>Big school-day energy starts with a good lunch.</h2>
+          <p>See what’s cooking at your canteen today.</p>
+        </div>
+        <a class="primary-link" href="#menu">Find your favorite <span aria-hidden="true">↗</span></a>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="footer-inner shell">
+      <a class="brand" href="#"><span class="brand-mark">🥗</span> taraKanteen</a>
+      <span>Good food. More school day. © <span id="year"></span></span>
+      <div class="footer-links"><a href="#about">About</a><a href="mailto:hello@tarakanteen.school">Contact</a></div>
+    </div>
+  </footer>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    const products = [
+      { name: "Chicken Adobo Bowl", description: "Tender adobo, fluffy rice, happy lunch.", price: 89, category: "meals", icon: "🍛", art: "art-rice", badge: "Student favorite", rating: "★ 4.9" },
+      { name: "Cheesy Chicken Melt", description: "Toasty, cheesy, and made to go.", price: 65, category: "snacks", icon: "🥪", art: "art-sandwich", badge: "Fresh today", rating: "★ 4.8" },
+      { name: "Creamy Veggie Pasta", description: "A cozy bowl with a garden-fresh twist.", price: 75, category: "meals", icon: "🍝", art: "art-pasta", badge: "Veggie pick", rating: "★ 4.7" },
+      { name: "Mango Cooldown", description: "Real mango flavor for sunny afternoons.", price: 35, category: "drinks", icon: "🥭", art: "art-juice", badge: "Cool & fresh", rating: "★ 4.9" },
+      { name: "Savory Pancit", description: "Classic noodles tossed with tasty toppings.", price: 60, category: "meals", icon: "🍜", art: "art-noodles", badge: "Campus classic", rating: "★ 4.8" },
+      { name: "Choco Chip Cookie", description: "Soft-baked and just the right amount sweet.", price: 25, category: "snacks", icon: "🍪", art: "art-cookie", badge: "Little treat", rating: "★ 4.9" },
+      { name: "Chilled Choco Milk", description: "A cold, creamy pick-me-up between classes.", price: 30, category: "drinks", icon: "🥛", art: "art-milk", badge: "Feel-good sip", rating: "★ 4.7" },
+      { name: "Fresh Fruit Cup", description: "A colorful mix, cut fresh this morning.", price: 40, category: "snacks", icon: "🍓", art: "art-fruit", badge: "Made fresh", rating: "★ 4.8" }
+    ];
+
+    const menuGrid = document.querySelector("#menuGrid");
+    const searchInput = document.querySelector("#menuSearch");
+    const categoryButtons = [...document.querySelectorAll(".category")];
+    const cartButton = document.querySelector("#cartButton");
+    const cartCount = document.querySelector("#cartCount");
+    const toast = document.querySelector("#toast");
+    let activeCategory = "all";
+    let itemCount = 0;
+    let toastTimer;
+
+    function renderMenu() {
+      const query = searchInput.value.trim().toLowerCase();
+      const filtered = products.filter(product =>
+        (activeCategory === "all" || product.category === activeCategory) &&
+        `${product.name} ${product.description}`.toLowerCase().includes(query)
+      );
+
+      if (!filtered.length) {
+        menuGrid.innerHTML = '<p class="empty-state">No menu items match that search. Try another favorite!</p>';
+        return;
+      }
+
+      menuGrid.innerHTML = filtered.map(product => `
+        <article class="menu-card">
+          <div class="product-art ${product.art}">
+            <span aria-hidden="true">${product.icon}</span>
+            <span class="badge">${product.badge}</span>
+          </div>
+          <div class="product-info">
+            <div class="product-top"><h3>${product.name}</h3><span class="rating">${product.rating}</span></div>
+            <p>${product.description}</p>
+            <div class="product-bottom">
+              <span class="price">₱${product.price}</span>
+              <button class="add-button" type="button" data-product="${product.name}" aria-label="Add ${product.name} to your tray">+</button>
+            </div>
+          </div>
+        </article>
+      `).join("");
+    }
+
+    function showToast(message) {
+      toast.textContent = message;
+      toast.classList.add("show");
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => toast.classList.remove("show"), 2400);
+    }
+
+    categoryButtons.forEach(button => {
+      button.addEventListener("click", () => {
+        activeCategory = button.dataset.category;
+        categoryButtons.forEach(categoryButton => {
+          const isActive = categoryButton === button;
+          categoryButton.classList.toggle("active", isActive);
+          categoryButton.setAttribute("aria-pressed", String(isActive));
+        });
+        renderMenu();
+      });
+    });
+
+    searchInput.addEventListener("input", renderMenu);
+    menuGrid.addEventListener("click", event => {
+      const addButton = event.target.closest(".add-button");
+      if (!addButton) return;
+      itemCount += 1;
+      cartCount.textContent = String(itemCount);
+      cartButton.setAttribute("aria-label", `Shopping cart, ${itemCount} ${itemCount === 1 ? "item" : "items"}`);
+      showToast(`${addButton.dataset.product} added to your tray`);
+    });
+    cartButton.addEventListener("click", () => {
+      showToast(itemCount ? `You have ${itemCount} ${itemCount === 1 ? "item" : "items"} in your tray.` : "Your tray is empty. Pick a favorite from the menu!");
+    });
+
+    document.querySelector("#year").textContent = String(new Date().getFullYear());
+    renderMenu();
+  </script>
+</body>
+</html>
