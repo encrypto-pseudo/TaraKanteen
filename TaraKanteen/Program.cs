@@ -1,161 +1,169 @@
+using System.Security.Claims; 
+using Microsoft.AspNetCore.Authentication; 
+using Microsoft.AspNetCore.Authentication.Cookies; 
+using Microsoft.AspNetCore.Identity; 
+using Microsoft.EntityFrameworkCore;
 
-
-var builder = WebApplication.CreateBuilder(args);
-
-// SQLite database file, stored outside wwwroot.
-var databasePath = Path.Combine(
-    builder.Environment.ContentRootPath,
-    "app.db"
-);
-
-// Register the database connection.
-builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlite($"Data Source={databasePath}")
-);
-
-// Register password hashing.
-builder.Services.AddScoped<
-    IPasswordHasher<AppUser>,
-    PasswordHasher<AppUser>
->();
-
-// Register cookie authentication.
-builder.Services
-    .AddAuthentication(
-        CookieAuthenticationDefaults.AuthenticationScheme
-    )
-    .AddCookie(options =>
-    {
-        options.Cookie.HttpOnly = true;
-        options.Cookie.SameSite = SameSiteMode.Strict;
-        options.ExpireTimeSpan = TimeSpan.FromHours(2);
-
-        options.Events.OnRedirectToLogin = context =>
-        {
-            context.Response.StatusCode = 401;
-            return Task.CompletedTask;
-        };
-
-        options.Events.OnRedirectToAccessDenied = context =>
-        {
-            context.Response.StatusCode = 403;
-            return Task.CompletedTask;
-        };
-    });
-
-builder.Services.AddAuthorization();
-
-var app = builder.Build();
-
-// Create the database and Users table on the first run.
-using (var scope = app.Services.CreateScope())
+public partial class Program
 {
-    var db = scope.ServiceProvider
-        .GetRequiredService<AppDbContext>();
-
-    await db.Database.EnsureCreatedAsync();
-
-    // Create a sample account for local development only.
-    if (app.Environment.IsDevelopment() &&
-        !await db.Users.AnyAsync(u => u.Username == "lester"))
+    private static async Task Main(string[] args)
     {
-        var hasher = scope.ServiceProvider
-            .GetRequiredService<IPasswordHasher<AppUser>>();
+        var builder = WebApplication.CreateBuilder(args);
 
-        var user = new AppUser
-        {
-            Username = "lester"
-        };
-
-        user.PasswordHash = hasher.HashPassword(
-            user,
-            "PracticeOnly!123"
+        // SQLite database file, stored outside wwwroot.
+        var databasePath = Path.Combine(
+            builder.Environment.ContentRootPath,
+            "app.db"
         );
 
-        db.Users.Add(user);
+        // Register the database connection.
+        builder.Services.AddDbContext<AppDbContext>(options =>
+            options.UseSqlite($"Data Source={databasePath}")
+        );
 
-        await db.SaveChangesAsync();
-    }
-}
+        // Register password hashing.
+        builder.Services.AddScoped<
+            IPasswordHasher<AppUser>,
+            PasswordHasher<AppUser>
+        >();
 
-app.UseHttpsRedirection();
-
-// Opens wwwroot/index.html at the root URL.
-app.UseDefaultFiles();
-
-// Serves CSS, JavaScript, images, and other public files.
-app.UseStaticFiles();
-
-app.UseAuthentication();
-app.UseAuthorization();
-
-// LOGIN ENDPOINT
-app.MapPost("/api/login", async (
-    LoginRequest request,
-    AppDbContext db,
-    IPasswordHasher<AppUser> hasher,
-    HttpContext context) =>
-{
-    if (string.IsNullOrWhiteSpace(request.Username) ||
-        string.IsNullOrWhiteSpace(request.Password))
-    {
-        return Results.BadRequest(new
-        {
-            message = "Enter your username and password."
-        });
-    }
-
-    var username = request.Username.Trim();
-
-    // Find the user in the Users table.
-    var user = await db.Users.SingleOrDefaultAsync(
-        u => u.Username == username
-    );
-
-    if (user is null)
-    {
-        return Results.Json(
-            new
+        // Register cookie authentication.
+        builder.Services
+            .AddAuthentication(
+                CookieAuthenticationDefaults.AuthenticationScheme
+            )
+            .AddCookie(options =>
             {
-                message = "Invalid username or password."
-            },
-            statusCode: 401
-        );
-    }
+                options.Cookie.HttpOnly = true;
+                options.Cookie.SameSite = SameSiteMode.Strict;
+                options.ExpireTimeSpan = TimeSpan.FromHours(2);
 
-    // Compare the submitted password with the saved hash.
-    var result = hasher.VerifyHashedPassword(
-        user,
-        user.PasswordHash,
-        request.Password
-    );
+                options.Events.OnRedirectToLogin = context =>
+                {
+                    context.Response.StatusCode = 401;
+                    return Task.CompletedTask;
+                };
 
-    if (result == PasswordVerificationResult.Failed)
-    {
-        return Results.Json(
-            new
+                options.Events.OnRedirectToAccessDenied = context =>
+                {
+                    context.Response.StatusCode = 403;
+                    return Task.CompletedTask;
+                };
+            });
+
+        builder.Services.AddAuthorization();
+
+        var app = builder.Build();
+
+        // Create the database and Users table on the first run.
+        using (var scope = app.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider
+                .GetRequiredService<AppDbContext>();
+
+            await db.Database.EnsureCreatedAsync();
+
+            // Create a sample account for local development only.
+            if (app.Environment.IsDevelopment() &&
+                !await db.Users.AnyAsync(u => u.Username == "lester"))
             {
-                message = "Invalid username or password."
-            },
-            statusCode: 401
-        );
-    }
+                var hasher = scope.ServiceProvider
+                    .GetRequiredService<IPasswordHasher<AppUser>>();
 
-    // Upgrade the password hash when needed.
-    if (result ==
-        PasswordVerificationResult.SuccessRehashNeeded)
-    {
-        user.PasswordHash = hasher.HashPassword(
-            user,
-            request.Password
-        );
+                var user = new AppUser
+                {
+                    Username = "lester"
+                };
 
-        await db.SaveChangesAsync();
-    }
+                user.PasswordHash = hasher.HashPassword(
+                    user,
+                    "PracticeOnly!123"
+                );
 
-    // Information stored in the authentication cookie.
-    var claims = new[]
-    {
+                db.Users.Add(user);
+
+                await db.SaveChangesAsync();
+            }
+        }
+
+        app.UseHttpsRedirection();
+
+        // Opens wwwroot/index.html at the root URL.
+        app.UseDefaultFiles();
+
+        // Serves CSS, JavaScript, images, and other public files.
+        app.UseStaticFiles();
+
+        app.UseAuthentication();
+        app.UseAuthorization();
+
+        // LOGIN ENDPOINT
+        app.MapPost("/api/login", async (
+            LoginRequest request,
+            AppDbContext db,
+            IPasswordHasher<AppUser> hasher,
+            HttpContext context) =>
+        {
+            if (string.IsNullOrWhiteSpace(request.Username) ||
+                string.IsNullOrWhiteSpace(request.Password))
+            {
+                return Results.BadRequest(new
+                {
+                    message = "Enter your username and password."
+                });
+            }
+
+            var username = request.Username.Trim();
+
+            // Find the user in the Users table.
+            var user = await db.Users.SingleOrDefaultAsync(
+                u => u.Username == username
+            );
+
+            if (user is null)
+            {
+                return Results.Json(
+                    new
+                    {
+                        message = "Invalid username or password."
+                    },
+                    statusCode: 401
+                );
+            }
+
+            // Compare the submitted password with the saved hash.
+            var result = hasher.VerifyHashedPassword(
+                user,
+                user.PasswordHash,
+                request.Password
+            );
+
+            if (result == PasswordVerificationResult.Failed)
+            {
+                return Results.Json(
+                    new
+                    {
+                        message = "Invalid username or password."
+                    },
+                    statusCode: 401
+                );
+            }
+
+            // Upgrade the password hash when needed.
+            if (result ==
+                PasswordVerificationResult.SuccessRehashNeeded)
+            {
+                user.PasswordHash = hasher.HashPassword(
+                    user,
+                    request.Password
+                );
+
+                await db.SaveChangesAsync();
+            }
+
+            // Information stored in the authentication cookie.
+            var claims = new[]
+            {
         new Claim(
             ClaimTypes.NameIdentifier,
             user.Id.ToString()
@@ -164,121 +172,123 @@ app.MapPost("/api/login", async (
             ClaimTypes.Name,
             user.Username
         )
-    };
+            };
 
-    var identity = new ClaimsIdentity(
-        claims,
-        CookieAuthenticationDefaults.AuthenticationScheme
-    );
+            var identity = new ClaimsIdentity(
+                claims,
+                CookieAuthenticationDefaults.AuthenticationScheme
+            );
 
-    // Sign in the user by creating an authentication cookie.
-    await context.SignInAsync(
-        CookieAuthenticationDefaults.AuthenticationScheme,
-        new ClaimsPrincipal(identity)
-    );
+            // Sign in the user by creating an authentication cookie.
+            await context.SignInAsync(
+                CookieAuthenticationDefaults.AuthenticationScheme,
+                new ClaimsPrincipal(identity)
+            );
 
-    return Results.Ok(new
-    {
-        message = "Login successful!"
-    });
-});
-
-// REGISTER ENDPOINT
-app.MapPost("/api/register", async (
-    RegisterRequest request,
-    AppDbContext db,
-    IPasswordHasher<AppUser> hasher) =>
-{
-    if (string.IsNullOrWhiteSpace(request.Username) ||
-        string.IsNullOrWhiteSpace(request.Password))
-    {
-        return Results.BadRequest(new
-        {
-            message = "Enter a username and password."
-        });
-    }
-
-    var username = request.Username.Trim();
-
-    if (username.Length < 3 || username.Length > 32)
-    {
-        return Results.BadRequest(new
-        {
-            message = "Your username must be between 3 and 32 characters."
-        });
-    }
-
-    if (request.Password.Length < 8)
-    {
-        return Results.BadRequest(new
-        {
-            message = "Your password must be at least 8 characters."
-        });
-    }
-
-    if (await db.Users.AnyAsync(user => user.Username == username))
-    {
-        return Results.Conflict(new
-        {
-            message = "That username is already taken. Try another one."
-        });
-    }
-
-    var user = new AppUser
-    {
-        Username = username
-    };
-
-    user.PasswordHash = hasher.HashPassword(user, request.Password);
-    db.Users.Add(user);
-
-    try
-    {
-        await db.SaveChangesAsync();
-    }
-    catch (DbUpdateException)
-    {
-        if (await db.Users.AnyAsync(existing => existing.Username == username))
-        {
-            return Results.Conflict(new
+            return Results.Ok(new
             {
-                message = "That username is already taken. Try another one."
+                message = "Login successful!"
             });
-        }
+        });
 
-        throw;
+        // REGISTER ENDPOINT
+        app.MapPost("/api/register", async (
+            RegisterRequest request,
+            AppDbContext db,
+            IPasswordHasher<AppUser> hasher) =>
+        {
+            if (string.IsNullOrWhiteSpace(request.Username) ||
+                string.IsNullOrWhiteSpace(request.Password))
+            {
+                return Results.BadRequest(new
+                {
+                    message = "Enter a username and password."
+                });
+            }
+
+            var username = request.Username.Trim();
+
+            if (username.Length < 3 || username.Length > 32)
+            {
+                return Results.BadRequest(new
+                {
+                    message = "Your username must be between 3 and 32 characters."
+                });
+            }
+
+            if (request.Password.Length < 8)
+            {
+                return Results.BadRequest(new
+                {
+                    message = "Your password must be at least 8 characters."
+                });
+            }
+
+            if (await db.Users.AnyAsync(user => user.Username == username))
+            {
+                return Results.Conflict(new
+                {
+                    message = "That username is already taken. Try another one."
+                });
+            }
+
+            var user = new AppUser
+            {
+                Username = username
+            };
+
+            user.PasswordHash = hasher.HashPassword(user, request.Password);
+            db.Users.Add(user);
+
+            try
+            {
+                await db.SaveChangesAsync();
+            }
+            catch (DbUpdateException)
+            {
+                if (await db.Users.AnyAsync(existing => existing.Username == username))
+                {
+                    return Results.Conflict(new
+                    {
+                        message = "That username is already taken. Try another one."
+                    });
+                }
+
+                throw;
+            }
+
+            return Results.Created("/login.html", new
+            {
+                message = "Your account is ready. You can log in now."
+            });
+        });
+
+        // CURRENT USER ENDPOINT
+        // Accessible only to signed-in users.
+        app.MapGet("/api/me", (HttpContext context) =>
+        {
+            return Results.Ok(new
+            {
+                username = context.User.Identity!.Name
+            });
+        }).RequireAuthorization();
+
+        // LOGOUT ENDPOINT
+        app.MapPost("/api/logout", async (HttpContext context) =>
+        {
+            await context.SignOutAsync(
+                CookieAuthenticationDefaults.AuthenticationScheme
+            );
+
+            return Results.Ok(new
+            {
+                message = "Logged out."
+            });
+        }).RequireAuthorization();
+
+        app.Run();
     }
-
-    return Results.Created("/login.html", new
-    {
-        message = "Your account is ready. You can log in now."
-    });
-});
-
-// CURRENT USER ENDPOINT
-// Accessible only to signed-in users.
-app.MapGet("/api/me", (HttpContext context) =>
-{
-    return Results.Ok(new
-    {
-        username = context.User.Identity!.Name
-    });
-}).RequireAuthorization();
-
-// LOGOUT ENDPOINT
-app.MapPost("/api/logout", async (HttpContext context) =>
-{
-    await context.SignOutAsync(
-        CookieAuthenticationDefaults.AuthenticationScheme
-    );
-
-    return Results.Ok(new
-    {
-        message = "Logged out."
-    });
-}).RequireAuthorization();
-
-app.Run();
+}
 
 // Defines the login data received from JavaScript.
 public record LoginRequest(
