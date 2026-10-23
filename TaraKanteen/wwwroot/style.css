@@ -36,6 +36,8 @@
     .nav-links a:hover { color: var(--ink); }
     .nav-actions { display: flex; align-items: center; gap: 12px; }
     .login { color: var(--ink); font-size: 13px; font-weight: 700; padding: 10px 12px; }
+    .signup-link { border-radius: 999px; padding: 11px 17px; background: var(--green); color: white; font-size: 13px; font-weight: 750; transition: background .2s; }
+    .signup-link:hover { background: #183b2e; }
     .cart-button { border: 0; border-radius: 999px; padding: 11px 17px; color: white; background: var(--green); font-size: 13px; font-weight: 750; cursor: pointer; }
     .cart-button span { margin-left: 7px; color: var(--lime); }
 
@@ -50,6 +52,8 @@
     .primary-link { display: inline-flex; align-items: center; gap: 12px; border-radius: 999px; padding: 15px 21px; background: var(--green); color: #fff; font-size: 13px; font-weight: 750; transition: transform .2s, background .2s; }
     .primary-link:hover { transform: translateY(-2px); background: #183b2e; }
     .primary-link span { color: var(--lime); font-size: 17px; }
+    .hero-login-link { color: var(--green); font-size: 13px; font-weight: 750; }
+    .hero-login-link:hover { text-decoration: underline; }
     .small-note { color: #76847d; font-size: 12px; }
 
     .hero-art { position: relative; min-height: 385px; display: grid; place-items: center; }
@@ -197,7 +201,10 @@
       .announcement { font-size: 10px; }
       .nav { height: 67px; }
       .nav-links { display: none; }
-      .login { padding: 9px 8px; }
+      .nav-actions { gap: 4px; }
+      .login { padding: 9px 7px; }
+      .signup-link { padding: 10px 11px; }
+      .cart-button { padding: 10px 11px; }
       .brand { font-size: 19px; }
       .hero { padding: 45px 0 48px; }
       .hero-grid { grid-template-columns: 1fr; }
