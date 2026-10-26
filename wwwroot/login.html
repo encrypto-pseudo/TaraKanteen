@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f8f7f1">
+  <meta name="description" content="Log in to TaraKanteen to get your favorite school meals ready for break.">
+  <title>Log in — TaraKanteen</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="auth-page">
+  <header class="auth-header">
+    <div class="auth-header-inner shell">
+      <a class="brand" href="index.html" aria-label="TaraKanteen home"><span class="brand-mark">🥗</span> taraKanteen</a>
+      <a class="auth-home-link" href="index.html">Back to home</a>
+    </div>
+  </header>
+
+  <main class="auth-main">
+    <div class="auth-layout">
+      <section class="auth-story" aria-label="Welcome to TaraKanteen">
+        <div class="auth-story-copy">
+          <p class="eyebrow">Your campus canteen, reimagined</p>
+          <h1>Good food.<br>More <em>school day.</em></h1>
+          <p>Your next favorite lunch is just around the corner. Log in to make your break a little tastier.</p>
+        </div>
+        <div class="auth-food" aria-hidden="true">🍛</div>
+      </section>
+
+      <section class="auth-form-panel" aria-labelledby="loginHeading">
+        <div class="auth-form-content">
+          <h2 id="loginHeading">Welcome back</h2>
+          <p class="auth-intro">Log in with your username to continue to your tray.</p>
+
+          <form id="loginForm">
+            <label class="auth-field" for="username">
+              <span>Username</span>
+              <input class="auth-input" id="username" name="username" type="text" placeholder="Your username" autocomplete="username" required>
+            </label>
+
+            <label class="auth-field" for="password">
+              <span>Password</span>
+              <div class="auth-input-wrap">
+                <input class="auth-input" id="password" name="password" type="password" placeholder="Enter your password" autocomplete="current-password" required>
+                <button class="auth-password-toggle" id="togglePassword" type="button" aria-controls="password" aria-pressed="false">Show</button>
+              </div>
+            </label>
+
+            <div class="auth-form-options">
+              <label class="auth-remember"><input type="checkbox" name="remember"> Remember me</label>
+              <a class="auth-help-link" href="mailto:hello@tarakanteen.school?subject=Login%20help">Need help?</a>
+            </div>
+
+            <button class="auth-submit" type="submit">Log in</button>
+            <p class="auth-notice" id="loginNotice" role="status" aria-live="polite"></p>
+          </form>
+          <p class="auth-switch">New to TaraKanteen? <a href="register.html">Create an account</a></p>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <footer class="auth-footer">Good food. More school day. © <span id="year"></span></footer>
+
+  <script>
+    const usernameInput = document.querySelector("#username");
+    const passwordInput = document.querySelector("#password");
+    const togglePassword = document.querySelector("#togglePassword");
+    const loginForm = document.querySelector("#loginForm");
+    const loginNotice = document.querySelector("#loginNotice");
+
+    togglePassword.addEventListener("click", () => {
+      const isVisible = passwordInput.type === "text";
+      passwordInput.type = isVisible ? "password" : "text";
+      togglePassword.textContent = isVisible ? "Show" : "Hide";
+      togglePassword.setAttribute("aria-pressed", String(!isVisible));
+    });
+
+    loginForm.addEventListener("submit", async event => {
+      event.preventDefault();
+      loginNotice.textContent = "";
+      loginNotice.classList.remove("success");
+
+      try {
+        const response = await fetch("/api/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            username: usernameInput.value,
+            password: passwordInput.value
+          })
+        });
+        const result = await response.json();
+
+        if (!response.ok) {
+          loginNotice.textContent = result.message || "Unable to log in. Please try again.";
+          return;
+        }
+
+        window.location.href = "index.html";
+      } catch {
+        loginNotice.textContent = "Could not connect. Please try again in a moment.";
+      }
+    });
+
+    document.querySelector("#year").textContent = String(new Date().getFullYear());
+  </script>
+</body>
+</html>
