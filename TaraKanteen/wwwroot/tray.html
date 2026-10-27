@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f8f7f1">
+  <meta name="description" content="Review and update the meals in your TaraKanteen tray.">
+  <title>Your tray — TaraKanteen</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="announcement">Freshly made for your school day <strong>· Order ahead and skip the queue!</strong></div>
+  <header>
+    <nav class="nav shell" aria-label="Main navigation">
+      <a class="brand" href="index.html" aria-label="TaraKanteen home"><span class="brand-mark">🥗</span> taraKanteen</a>
+      <div class="nav-links">
+        <a href="index.html#menu">Our menu</a>
+        <a href="index.html#how-it-works">How it works</a>
+        <a href="index.html#about">About us</a>
+      </div>
+      <div class="nav-actions">
+        <a class="login" href="login.html">Log in</a>
+        <a class="signup-link" href="register.html">Sign up</a>
+        <a class="cart-button" href="tray.html" data-cart-button aria-current="page" aria-label="Your tray, 0 items">Your tray <span data-cart-count>0</span></a>
+      </div>
+    </nav>
+  </header>
+
+  <main class="tray-main shell">
+    <a class="tray-back-link" href="index.html#menu"><span aria-hidden="true">←</span> Back to the menu</a>
+    <div class="tray-heading">
+      <div>
+        <p class="eyebrow">Your campus favorites</p>
+        <h1>Your tray<span>.</span></h1>
+        <p id="trayItemCount" class="tray-item-count" aria-live="polite"></p>
+      </div>
+      <span class="tray-heading-icon" aria-hidden="true">🥡</span>
+    </div>
+
+    <div class="tray-layout" id="trayLayout">
+      <section class="tray-items" aria-label="Items in your tray">
+        <div class="tray-items-heading">
+          <h2>Order items</h2>
+          <span>Ready when you are</span>
+        </div>
+        <div id="trayItems" class="tray-items-list" aria-live="polite"></div>
+      </section>
+
+      <aside class="tray-summary" aria-labelledby="summaryHeading">
+        <h2 id="summaryHeading">Order summary</h2>
+        <div class="summary-row"><span>Items subtotal</span><strong id="traySubtotal">₱0.00</strong></div>
+        <div class="summary-row"><span>Pickup</span><strong>Free</strong></div>
+        <div class="summary-total"><span>Total</span><strong id="trayTotal">₱0.00</strong></div>
+        <p class="summary-note">Your total may be confirmed by the canteen when you place your order.</p>
+        <a class="primary-link summary-browse" href="index.html#menu">Add more favorites <span aria-hidden="true">↗</span></a>
+      </aside>
+    </div>
+
+    <section class="tray-empty" id="trayEmpty" hidden>
+      <span class="tray-empty-icon" aria-hidden="true">🍽️</span>
+      <p class="eyebrow">A little room for something good</p>
+      <h2>Your tray is waiting.</h2>
+      <p>Pick a favorite from the menu and it’ll show up here.</p>
+      <a class="primary-link" href="index.html#menu">Explore the menu <span aria-hidden="true">↗</span></a>
+    </section>
+  </main>
+
+  <footer>
+    <div class="footer-inner shell">
+      <a class="brand" href="index.html"><span class="brand-mark">🥗</span> taraKanteen</a>
+      <span>Good food. More school day. © <span id="year"></span></span>
+      <div class="footer-links"><a href="index.html#about">About</a><a href="mailto:hello@tarakanteen.school">Contact</a></div>
+    </div>
+  </footer>
+
+  <script src="cart.js"></script>
+  <script>
+    const cart = window.TaraKanteen.cart;
+    const trayLayout = document.querySelector("#trayLayout");
+    const trayEmpty = document.querySelector("#trayEmpty");
+    const trayItems = document.querySelector("#trayItems");
+
+    function formatPrice(amount) {
+      return `₱${amount.toFixed(2)}`;
+    }
+
+    function renderTray() {
+      const items = cart.getItems();
+      const count = items.reduce((total, item) => total + item.quantity, 0);
+      const subtotal = cart.getSubtotal();
+      document.querySelector("#trayItemCount").textContent = `${count} ${count === 1 ? "item" : "items"} in your tray`;
+      document.querySelector("#traySubtotal").textContent = formatPrice(subtotal);
+      document.querySelector("#trayTotal").textContent = formatPrice(subtotal);
+      trayLayout.hidden = items.length === 0;
+      trayEmpty.hidden = items.length !== 0;
+
+      trayItems.innerHTML = items.map(item => `
+        <article class="tray-item">
+          <div class="tray-item-art ${item.art}" aria-hidden="true">${item.icon}</div>
+          <div class="tray-item-details">
+            <h3>${item.name}</h3>
+            <p>${item.description}</p>
+            <strong class="tray-item-price">${formatPrice(item.price)}</strong>
+          </div>
+          <div class="tray-item-actions">
+            <div class="quantity-control" aria-label="${item.name} quantity">
+              <button type="button" data-action="decrease" data-id="${item.id}" aria-label="Decrease ${item.name} quantity">−</button>
+              <span aria-live="polite">${item.quantity}</span>
+              <button type="button" data-action="increase" data-id="${item.id}" aria-label="Increase ${item.name} quantity">+</button>
+            </div>
+            <button class="remove-item" type="button" data-action="remove" data-id="${item.id}">Remove</button>
+          </div>
+        </article>
+      `).join("");
+    }
+
+    trayItems.addEventListener("click", event => {
+      const button = event.target.closest("[data-action]");
+      if (!button) return;
+      const item = cart.getItems().find(entry => entry.id === button.dataset.id);
+      if (!item) return;
+
+      if (button.dataset.action === "increase") {
+        cart.setQuantity(item.id, item.quantity + 1);
+      } else if (button.dataset.action === "decrease") {
+        if (item.quantity === 1) {
+          cart.remove(item.id);
+        } else {
+          cart.setQuantity(item.id, item.quantity - 1);
+        }
+      } else if (button.dataset.action === "remove") {
+        cart.remove(item.id);
+      }
+    });
+
+    window.addEventListener("tara:cart-change", renderTray);
+    window.addEventListener("storage", event => {
+      if (event.key === "taraKanteen.tray") renderTray();
+    });
+    document.querySelector("#year").textContent = String(new Date().getFullYear());
+    renderTray();
+  </script>
+</body>
+</html>

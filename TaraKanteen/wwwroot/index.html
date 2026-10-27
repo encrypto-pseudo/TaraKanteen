@@ -21,7 +21,7 @@
       <div class="nav-actions">
         <a class="login" href="login.html">Log in</a>
         <a class="signup-link" href="register.html">Sign up</a>
-        <button class="cart-button" type="button" id="cartButton" aria-label="Shopping cart, 0 items">Your tray <span id="cartCount">0</span></button>
+        <a class="cart-button" href="tray.html" data-cart-button aria-label="Your tray, 0 items">Your tray <span data-cart-count>0</span></a>
       </div>
     </nav>
   </header>
@@ -116,26 +116,14 @@
   </footer>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
+  <script src="cart.js"></script>
   <script>
-    const products = [
-      { name: "Chicken Adobo Bowl", description: "Tender adobo, fluffy rice, happy lunch.", price: 89, category: "meals", icon: "🍛", art: "art-rice", badge: "Student favorite", rating: "★ 4.9" },
-      { name: "Cheesy Chicken Melt", description: "Toasty, cheesy, and made to go.", price: 65, category: "snacks", icon: "🥪", art: "art-sandwich", badge: "Fresh today", rating: "★ 4.8" },
-      { name: "Creamy Veggie Pasta", description: "A cozy bowl with a garden-fresh twist.", price: 75, category: "meals", icon: "🍝", art: "art-pasta", badge: "Veggie pick", rating: "★ 4.7" },
-      { name: "Mango Cooldown", description: "Real mango flavor for sunny afternoons.", price: 35, category: "drinks", icon: "🥭", art: "art-juice", badge: "Cool & fresh", rating: "★ 4.9" },
-      { name: "Savory Pancit", description: "Classic noodles tossed with tasty toppings.", price: 60, category: "meals", icon: "🍜", art: "art-noodles", badge: "Campus classic", rating: "★ 4.8" },
-      { name: "Choco Chip Cookie", description: "Soft-baked and just the right amount sweet.", price: 25, category: "snacks", icon: "🍪", art: "art-cookie", badge: "Little treat", rating: "★ 4.9" },
-      { name: "Chilled Choco Milk", description: "A cold, creamy pick-me-up between classes.", price: 30, category: "drinks", icon: "🥛", art: "art-milk", badge: "Feel-good sip", rating: "★ 4.7" },
-      { name: "Fresh Fruit Cup", description: "A colorful mix, cut fresh this morning.", price: 40, category: "snacks", icon: "🍓", art: "art-fruit", badge: "Made fresh", rating: "★ 4.8" }
-    ];
-
+    const products = window.TaraKanteen.products;
     const menuGrid = document.querySelector("#menuGrid");
     const searchInput = document.querySelector("#menuSearch");
     const categoryButtons = [...document.querySelectorAll(".category")];
-    const cartButton = document.querySelector("#cartButton");
-    const cartCount = document.querySelector("#cartCount");
     const toast = document.querySelector("#toast");
     let activeCategory = "all";
-    let itemCount = 0;
     let toastTimer;
 
     function renderMenu() {
@@ -161,7 +149,7 @@
             <p>${product.description}</p>
             <div class="product-bottom">
               <span class="price">₱${product.price}</span>
-              <button class="add-button" type="button" data-product="${product.name}" aria-label="Add ${product.name} to your tray">+</button>
+              <button class="add-button" type="button" data-product="${product.id}" aria-label="Add ${product.name} to your tray">+</button>
             </div>
           </div>
         </article>
@@ -191,13 +179,10 @@
     menuGrid.addEventListener("click", event => {
       const addButton = event.target.closest(".add-button");
       if (!addButton) return;
-      itemCount += 1;
-      cartCount.textContent = String(itemCount);
-      cartButton.setAttribute("aria-label", `Shopping cart, ${itemCount} ${itemCount === 1 ? "item" : "items"}`);
-      showToast(`${addButton.dataset.product} added to your tray`);
-    });
-    cartButton.addEventListener("click", () => {
-      showToast(itemCount ? `You have ${itemCount} ${itemCount === 1 ? "item" : "items"} in your tray.` : "Your tray is empty. Pick a favorite from the menu!");
+      const product = products.find(item => item.id === addButton.dataset.product);
+      if (!product) return;
+      window.TaraKanteen.cart.add(product.id);
+      showToast(`${product.name} added to your tray`);
     });
 
     document.querySelector("#year").textContent = String(new Date().getFullYear());
