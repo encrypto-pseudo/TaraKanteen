@@ -51,7 +51,11 @@ public partial class Program
                 };
             });
 
-        builder.Services.AddAuthorization();
+        builder.Services.AddAuthorization(options =>
+{
+        options.AddPolicy("AdminOnly", policy =>
+        policy.RequireRole("Admin"));
+});
 
         var app = builder.Build();
 
@@ -171,6 +175,10 @@ public partial class Program
         new Claim(
             ClaimTypes.Name,
             user.Username
+        ),
+        new Claim(
+            ClaimTypes.Role,
+            user.Role
         )
             };
 
@@ -232,10 +240,11 @@ public partial class Program
                 });
             }
 
-            var user = new AppUser
-            {
-                Username = username
-            };
+                var user = new AppUser
+{
+            Username = username,
+    Role = "User"
+};
 
             user.PasswordHash = hasher.HashPassword(user, request.Password);
             db.Users.Add(user);
@@ -286,6 +295,16 @@ public partial class Program
             });
         }).RequireAuthorization();
 
+        // ADMIN-ONLY ENDPOINT
+        app.MapGet("/api/admin/dashboard", () =>
+{
+         return Results.Ok(new
+     {
+        message = "Welcome to the Admin Dashboard!"
+    });
+})
+        .RequireAuthorization("AdminOnly");
+
         app.Run();
     }
 }
@@ -305,10 +324,9 @@ public record RegisterRequest(
 public class AppUser
 {
     public int Id { get; set; }
-
     public string Username { get; set; } = "";
-
     public string PasswordHash { get; set; } = "";
+    public string Role { get; set; } = "User";
 }
 
 // Defines the database and its tables.
