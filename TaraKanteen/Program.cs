@@ -67,6 +67,27 @@ public partial class Program
 
             await db.Database.EnsureCreatedAsync();
 
+            var connection = db.Database.GetDbConnection();
+            await connection.OpenAsync();
+
+            using var command = connection.CreateCommand();
+            command.CommandText = """
+    ALTER TABLE Users
+    ADD COLUMN Role TEXT NOT NULL DEFAULT 'User';
+    """;
+
+            try
+{
+            await command.ExecuteNonQueryAsync();
+}
+            catch (Microsoft.Data.Sqlite.SqliteException ex)
+            when (ex.Message.Contains("duplicate column name"))
+            {
+            // Role column already exists.
+            }
+
+            await connection.CloseAsync();
+
             // Create a sample account for local development only.
             if (app.Environment.IsDevelopment() &&
                 !await db.Users.AnyAsync(u => u.Username == "lester"))
