@@ -1,3 +1,11 @@
+C:\Users\LMI\Desktop\Grade 12\Sagittarius\hatdog\TaraKanteen\obj\Debug\net8.0\TaraKanteen.csproj.AssemblyReference.cache
+C:\Users\LMI\Desktop\Grade 12\Sagittarius\hatdog\TaraKanteen\obj\Debug\net8.0\rpswa.dswa.cache.json
+C:\Users\LMI\Desktop\Grade 12\Sagittarius\hatdog\TaraKanteen\obj\Debug\net8.0\TaraKanteen.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\LMI\Desktop\Grade 12\Sagittarius\hatdog\TaraKanteen\obj\Debug\net8.0\TaraKanteen.AssemblyInfoInputs.cache
+C:\Users\LMI\Desktop\Grade 12\Sagittarius\hatdog\TaraKanteen\obj\Debug\net8.0\TaraKanteen.AssemblyInfo.cs
+C:\Users\LMI\Desktop\Grade 12\Sagittarius\hatdog\TaraKanteen\obj\Debug\net8.0\TaraKanteen.csproj.CoreCompileInputs.cache
+C:\Users\LMI\Desktop\Grade 12\Sagittarius\hatdog\TaraKanteen\obj\Debug\net8.0\TaraKanteen.MvcApplicationPartsAssemblyInfo.cache
+C:\Users\LMI\Desktop\Grade 12\Sagittarius\hatdog\TaraKanteen\obj\Debug\net8.0\TaraKanteen.sourcelink.json
 C:\Users\LMI\Desktop\Grade 12\Sagittarius\hatdog\TaraKanteen\bin\Debug\net8.0\appsettings.Development.json
 C:\Users\LMI\Desktop\Grade 12\Sagittarius\hatdog\TaraKanteen\bin\Debug\net8.0\appsettings.json
 C:\Users\LMI\Desktop\Grade 12\Sagittarius\hatdog\TaraKanteen\bin\Debug\net8.0\TaraKanteen.staticwebassets.runtime.json
@@ -42,14 +50,6 @@ C:\Users\LMI\Desktop\Grade 12\Sagittarius\hatdog\TaraKanteen\bin\Debug\net8.0\ru
 C:\Users\LMI\Desktop\Grade 12\Sagittarius\hatdog\TaraKanteen\bin\Debug\net8.0\runtimes\win-arm64\native\e_sqlite3.dll
 C:\Users\LMI\Desktop\Grade 12\Sagittarius\hatdog\TaraKanteen\bin\Debug\net8.0\runtimes\win-x64\native\e_sqlite3.dll
 C:\Users\LMI\Desktop\Grade 12\Sagittarius\hatdog\TaraKanteen\bin\Debug\net8.0\runtimes\win-x86\native\e_sqlite3.dll
-C:\Users\LMI\Desktop\Grade 12\Sagittarius\hatdog\TaraKanteen\obj\Debug\net8.0\TaraKanteen.csproj.AssemblyReference.cache
-C:\Users\LMI\Desktop\Grade 12\Sagittarius\hatdog\TaraKanteen\obj\Debug\net8.0\rpswa.dswa.cache.json
-C:\Users\LMI\Desktop\Grade 12\Sagittarius\hatdog\TaraKanteen\obj\Debug\net8.0\TaraKanteen.GeneratedMSBuildEditorConfig.editorconfig
-C:\Users\LMI\Desktop\Grade 12\Sagittarius\hatdog\TaraKanteen\obj\Debug\net8.0\TaraKanteen.AssemblyInfoInputs.cache
-C:\Users\LMI\Desktop\Grade 12\Sagittarius\hatdog\TaraKanteen\obj\Debug\net8.0\TaraKanteen.AssemblyInfo.cs
-C:\Users\LMI\Desktop\Grade 12\Sagittarius\hatdog\TaraKanteen\obj\Debug\net8.0\TaraKanteen.csproj.CoreCompileInputs.cache
-C:\Users\LMI\Desktop\Grade 12\Sagittarius\hatdog\TaraKanteen\obj\Debug\net8.0\TaraKanteen.MvcApplicationPartsAssemblyInfo.cache
-C:\Users\LMI\Desktop\Grade 12\Sagittarius\hatdog\TaraKanteen\obj\Debug\net8.0\TaraKanteen.sourcelink.json
 C:\Users\LMI\Desktop\Grade 12\Sagittarius\hatdog\TaraKanteen\obj\Debug\net8.0\rjimswa.dswa.cache.json
 C:\Users\LMI\Desktop\Grade 12\Sagittarius\hatdog\TaraKanteen\obj\Debug\net8.0\rjsmrazor.dswa.cache.json
 C:\Users\LMI\Desktop\Grade 12\Sagittarius\hatdog\TaraKanteen\obj\Debug\net8.0\rjsmcshtml.dswa.cache.json

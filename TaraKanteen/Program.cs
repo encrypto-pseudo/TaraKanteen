@@ -1,4 +1,5 @@
-using System.Security.Claims; 
+using System.Security.Claims;
+using System.Data.Common;
 using Microsoft.AspNetCore.Authentication; 
 using Microsoft.AspNetCore.Authentication.Cookies; 
 using Microsoft.AspNetCore.Identity; 
@@ -67,26 +68,112 @@ public partial class Program
 
             await db.Database.EnsureCreatedAsync();
 
+            // Keep the SQLite schema compatible with the current models.
+            // EnsureCreatedAsync does not add columns to an existing database.
             var connection = db.Database.GetDbConnection();
             await connection.OpenAsync();
 
-            using var command = connection.CreateCommand();
-            command.CommandText = """
-    ALTER TABLE Users
-    ADD COLUMN Role TEXT NOT NULL DEFAULT 'User';
-    """;
-
             try
-{
-            await command.ExecuteNonQueryAsync();
-}
-            catch (Microsoft.Data.Sqlite.SqliteException ex)
-            when (ex.Message.Contains("duplicate column name"))
             {
-            // Role column already exists.
+                await db.Database.ExecuteSqlRawAsync("""
+                    CREATE TABLE IF NOT EXISTS Products (
+                        Id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+                        Name TEXT NOT NULL,
+                        Description TEXT NULL,
+                        Price TEXT NOT NULL DEFAULT '0',
+                        ImageUrl TEXT NULL,
+                        Category TEXT NOT NULL DEFAULT 'Uncategorized',
+                        Icon TEXT NULL,
+                        Stock INTEGER NOT NULL DEFAULT 0,
+                        IsAvailable INTEGER NOT NULL DEFAULT 1,
+                        CreatedAt TEXT NOT NULL DEFAULT '1970-01-01T00:00:00.0000000Z'
+                    );
+
+                    CREATE TABLE IF NOT EXISTS Orders (
+                        Id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+                        UserId INTEGER NOT NULL,
+                        StudentUsername TEXT NOT NULL,
+                        Total REAL NOT NULL,
+                        Status TEXT NOT NULL,
+                        CreatedAt TEXT NOT NULL,
+                        FOREIGN KEY (UserId) REFERENCES Users (Id)
+                    );
+
+                    CREATE TABLE IF NOT EXISTS OrderItems (
+                        Id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+                        OrderId INTEGER NOT NULL,
+                        ProductId INTEGER NOT NULL,
+                        ProductName TEXT NOT NULL,
+                        Quantity INTEGER NOT NULL,
+                        UnitPrice REAL NOT NULL,
+                        LineTotal REAL NOT NULL,
+                        FOREIGN KEY (OrderId) REFERENCES Orders (Id),
+                        FOREIGN KEY (ProductId) REFERENCES Products (Id)
+                    );
+
+                    CREATE INDEX IF NOT EXISTS IX_Orders_CreatedAt
+                        ON Orders (CreatedAt);
+
+                    CREATE INDEX IF NOT EXISTS IX_OrderItems_OrderId
+                        ON OrderItems (OrderId);
+                    """);
+
+                // Add columns that may be missing from older copies of app.db.
+                await EnsureSqliteColumnAsync(
+                    connection, "Users", "Role",
+                    "Role TEXT NOT NULL DEFAULT 'User'");
+
+                await EnsureSqliteColumnAsync(
+                    connection, "Products", "Description",
+                    "Description TEXT NULL");
+
+                await EnsureSqliteColumnAsync(
+                    connection, "Products", "Price",
+                    "Price TEXT NOT NULL DEFAULT '0'");
+
+                await EnsureSqliteColumnAsync(
+                    connection, "Products", "ImageUrl",
+                    "ImageUrl TEXT NULL");
+
+                await EnsureSqliteColumnAsync(
+                    connection, "Products", "Category",
+                    "Category TEXT NOT NULL DEFAULT 'Uncategorized'");
+
+                await EnsureSqliteColumnAsync(
+                    connection, "Products", "Icon",
+                    "Icon TEXT NULL");
+
+                await EnsureSqliteColumnAsync(
+                    connection, "Products", "Stock",
+                    "Stock INTEGER NOT NULL DEFAULT 0");
+
+                await EnsureSqliteColumnAsync(
+                    connection, "Products", "IsAvailable",
+                    "IsAvailable INTEGER NOT NULL DEFAULT 1");
+
+                await EnsureSqliteColumnAsync(
+                    connection, "Products", "CreatedAt",
+                    "CreatedAt TEXT NOT NULL DEFAULT '1970-01-01T00:00:00.0000000Z'");
+            }
+            finally
+            {
+                await connection.CloseAsync();
             }
 
-            await connection.CloseAsync();
+            if (!await db.Products.AnyAsync())
+            {
+                db.Products.AddRange(
+                    new Product { Name = "Chicken Adobo Bowl", Description = "Tender adobo, fluffy rice, happy lunch.", Price = 89, Category = "meals", Icon = "🍛", Stock = 24 },
+                    new Product { Name = "Cheesy Chicken Melt", Description = "Toasty, cheesy, and made to go.", Price = 65, Category = "snacks", Icon = "🥪", Stock = 18 },
+                    new Product { Name = "Creamy Veggie Pasta", Description = "A cozy bowl with a garden-fresh twist.", Price = 75, Category = "meals", Icon = "🍝", Stock = 16 },
+                    new Product { Name = "Mango Cooldown", Description = "Real mango flavor for sunny afternoons.", Price = 35, Category = "drinks", Icon = "🥭", Stock = 30 },
+                    new Product { Name = "Savory Pancit", Description = "Classic noodles tossed with tasty toppings.", Price = 60, Category = "meals", Icon = "🍜", Stock = 20 },
+                    new Product { Name = "Choco Chip Cookie", Description = "Soft-baked and just the right amount sweet.", Price = 25, Category = "snacks", Icon = "🍪", Stock = 35 },
+                    new Product { Name = "Chilled Choco Milk", Description = "A cold, creamy pick-me-up between classes.", Price = 30, Category = "drinks", Icon = "🥛", Stock = 28 },
+                    new Product { Name = "Fresh Fruit Cup", Description = "A colorful mix, cut fresh this morning.", Price = 40, Category = "snacks", Icon = "🍓", Stock = 22 }
+                );
+                await db.SaveChangesAsync();
+            }
 
             // Create a sample account for local development only.
             if (app.Environment.IsDevelopment() &&
@@ -216,7 +303,8 @@ public partial class Program
 
             return Results.Ok(new
             {
-                message = "Login successful!"
+                message = "Login successful!",
+                role = user.Role
             });
         });
 
@@ -299,7 +387,8 @@ public partial class Program
         {
             return Results.Ok(new
             {
-                username = context.User.Identity!.Name
+                username = context.User.Identity!.Name,
+                role = context.User.FindFirstValue(ClaimTypes.Role)
             });
         }).RequireAuthorization();
 
@@ -316,18 +405,317 @@ public partial class Program
             });
         }).RequireAuthorization();
 
-        // ADMIN-ONLY ENDPOINT
-        app.MapGet("/api/admin/dashboard", () =>
-{
-         return Results.Ok(new
-     {
-        message = "Welcome to the Admin Dashboard!"
-    });
-})
-        .RequireAuthorization("AdminOnly");
+        app.MapGet("/api/products", async (AppDbContext db) =>
+            Results.Ok(await db.Products
+                .Where(product => product.IsAvailable && product.Stock > 0)
+                .OrderBy(product => product.Category)
+                .ThenBy(product => product.Name)
+                .ToListAsync()))
+            .RequireAuthorization();
+
+        app.MapGet("/api/orders/mine", async (
+            HttpContext context,
+            AppDbContext db) =>
+        {
+            var userId = int.Parse(context.User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            var orders = await db.Orders
+                .Where(order => order.UserId == userId)
+                .OrderByDescending(order => order.CreatedAt)
+                .Select(order => new
+                {
+                    order.Id,
+                    order.Total,
+                    order.Status,
+                    order.CreatedAt,
+                    Items = db.OrderItems.Where(item => item.OrderId == order.Id)
+                        .Select(item => new { item.ProductName, item.Quantity, item.UnitPrice })
+                        .ToList()
+                })
+                .ToListAsync();
+            return Results.Ok(orders);
+        })
+            .RequireAuthorization();
+
+        app.MapPost("/api/orders", async (
+            OrderRequest request,
+            HttpContext context,
+            AppDbContext db) =>
+        {
+            if (request.Items is null || request.Items.Count == 0 || request.Items.Count > 50 ||
+                request.Items.Any(item => item is null || item.ProductId <= 0 || item.Quantity <= 0 || item.Quantity > 99))
+            {
+                return Results.BadRequest(new { message = "Choose valid items and quantities for your order." });
+            }
+
+            var requestedItems = request.Items
+                .GroupBy(item => item!.ProductId)
+                .Select(group => new { ProductId = group.Key, Quantity = group.Sum(item => item.Quantity) })
+                .ToList();
+            if (requestedItems.Any(item => item.Quantity > 99))
+            {
+                return Results.BadRequest(new { message = "An item quantity cannot exceed 99." });
+            }
+
+            await using var transaction = await db.Database.BeginTransactionAsync();
+            var productIds = requestedItems.Select(item => item.ProductId).ToList();
+            var products = await db.Products
+                .Where(product => productIds.Contains(product.Id))
+                .ToDictionaryAsync(product => product.Id);
+
+            if (products.Count != requestedItems.Count ||
+                requestedItems.Any(item => !products[item.ProductId].IsAvailable || products[item.ProductId].Stock < item.Quantity))
+            {
+                return Results.Conflict(new { message = "Some items are unavailable or no longer have enough stock. Refresh the menu and try again." });
+            }
+
+            var order = new FoodOrder
+            {
+                UserId = int.Parse(context.User.FindFirstValue(ClaimTypes.NameIdentifier)!),
+                StudentUsername = context.User.Identity!.Name!,
+                Status = "Preparing",
+                CreatedAt = DateTime.UtcNow,
+                Items = requestedItems.Select(item =>
+                {
+                    var product = products[item.ProductId];
+                    product.Stock -= item.Quantity;
+                    return new FoodOrderItem
+                    {
+                        ProductId = product.Id,
+                        ProductName = product.Name,
+                        Quantity = item.Quantity,
+                        UnitPrice = (double)product.Price,
+                        LineTotal = (double)(product.Price * item.Quantity)
+                    };
+                }).ToList()
+            };
+            order.Total = order.Items.Sum(item => item.LineTotal);
+            db.Orders.Add(order);
+            await db.SaveChangesAsync();
+            await transaction.CommitAsync();
+
+            return Results.Created($"/api/orders/{order.Id}", new
+            {
+                order.Id,
+                order.Total,
+                order.Status,
+                order.CreatedAt
+            });
+        })
+            .RequireAuthorization();
+
+        app.MapGet("/api/admin/dashboard", async (AppDbContext db) =>
+        {
+            var today = DateTime.UtcNow.Date;
+            var orders = await db.Orders
+                .OrderByDescending(order => order.CreatedAt)
+                .Select(order => new
+                {
+                    order.Id,
+                    order.StudentUsername,
+                    order.Total,
+                    order.Status,
+                    order.CreatedAt,
+                    Items = db.OrderItems.Where(item => item.OrderId == order.Id)
+                        .Select(item => new { item.ProductName, item.Quantity, item.UnitPrice })
+                        .ToList()
+                })
+                .ToListAsync();
+            var products = await db.Products.OrderBy(product => product.Name).ToListAsync();
+
+            return Results.Ok(new
+            {
+                products,
+                orders,
+                metrics = new
+                {
+                    todaySales = orders.Where(order => order.CreatedAt.Date == today && order.Status != "Cancelled").Sum(order => order.Total),
+                    todayOrders = orders.Count(order => order.CreatedAt.Date == today && order.Status != "Cancelled"),
+                    activeProducts = products.Count(product => product.IsAvailable),
+                    lowStock = products.Count(product => product.Stock <= 5)
+                }
+            });
+        })
+            .RequireAuthorization("AdminOnly");
+
+        app.MapPost("/api/admin/products", async (
+            ProductRequest request,
+            AppDbContext db) =>
+        {
+            var error = ValidateProduct(request);
+            if (error is not null) return Results.BadRequest(new { message = error });
+
+            var product = new Product();
+            ApplyProduct(product, request);
+            db.Products.Add(product);
+            await db.SaveChangesAsync();
+            return Results.Created($"/api/admin/products/{product.Id}", product);
+        })
+            .RequireAuthorization("AdminOnly");
+
+        app.MapPut("/api/admin/products/{id:int}", async (
+            int id,
+            ProductRequest request,
+            AppDbContext db) =>
+        {
+            var error = ValidateProduct(request);
+            if (error is not null) return Results.BadRequest(new { message = error });
+
+            var product = await db.Products.FindAsync(id);
+            if (product is null) return Results.NotFound(new { message = "Product not found." });
+            ApplyProduct(product, request);
+            await db.SaveChangesAsync();
+            return Results.Ok(product);
+        })
+            .RequireAuthorization("AdminOnly");
+
+        app.MapPost("/api/admin/orders", async (
+            AdminOrderRequest request,
+            HttpContext context,
+            AppDbContext db) =>
+        {
+            if (request.ProductId <= 0 || request.Quantity <= 0 || request.Quantity > 99)
+                return Results.BadRequest(new { message = "Choose a product and a quantity from 1 to 99." });
+            if (request.CustomerName?.Trim().Length > 80)
+                return Results.BadRequest(new { message = "Customer name must be 80 characters or fewer." });
+
+            await using var transaction = await db.Database.BeginTransactionAsync();
+            var product = await db.Products.FindAsync(request.ProductId);
+            if (product is null || !product.IsAvailable || product.Stock < request.Quantity)
+                return Results.Conflict(new { message = "That product is unavailable or does not have enough stock." });
+
+            product.Stock -= request.Quantity;
+            var order = new FoodOrder
+            {
+                UserId = int.Parse(context.User.FindFirstValue(ClaimTypes.NameIdentifier)!),
+                StudentUsername = string.IsNullOrWhiteSpace(request.CustomerName)
+                    ? "Walk-in"
+                    : request.CustomerName.Trim(),
+                Total = (double)(product.Price * request.Quantity),
+                Status = "Completed",
+                CreatedAt = DateTime.UtcNow,
+                Items =
+                [
+                    new FoodOrderItem
+                    {
+                        ProductId = product.Id,
+                        ProductName = product.Name,
+                        Quantity = request.Quantity,
+                        UnitPrice = (double)product.Price,
+                        LineTotal = (double)(product.Price * request.Quantity)
+                    }
+                ]
+            };
+            db.Orders.Add(order);
+            await db.SaveChangesAsync();
+            await transaction.CommitAsync();
+
+            return Results.Created($"/api/orders/{order.Id}", new
+            {
+                order.Id,
+                order.Total,
+                order.Status,
+                order.CreatedAt
+            });
+        })
+            .RequireAuthorization("AdminOnly");
+
+        app.MapPut("/api/admin/orders/{id:int}/status", async (
+            int id,
+            OrderStatusRequest request,
+            AppDbContext db) =>
+        {
+            var allowedStatuses = new[] { "Preparing", "Ready", "Completed", "Cancelled" };
+            if (request.Status is null || !allowedStatuses.Contains(request.Status))
+                return Results.BadRequest(new { message = "Choose a valid order status." });
+
+            var order = await db.Orders.Include(entry => entry.Items)
+                .SingleOrDefaultAsync(entry => entry.Id == id);
+            if (order is null) return Results.NotFound(new { message = "Order not found." });
+            if (order.Status == "Cancelled" && request.Status != "Cancelled")
+                return Results.Conflict(new { message = "Cancelled orders cannot be reopened." });
+
+            if (request.Status == "Cancelled" && order.Status != "Cancelled")
+            {
+                foreach (var item in order.Items)
+                {
+                    var product = await db.Products.FindAsync(item.ProductId);
+                    if (product is not null) product.Stock += item.Quantity;
+                }
+            }
+            order.Status = request.Status;
+            await db.SaveChangesAsync();
+            return Results.Ok(new { order.Id, order.Status });
+        })
+            .RequireAuthorization("AdminOnly");
 
         app.Run();
     }
+
+    private static string? ValidateProduct(ProductRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request.Name) || request.Name.Trim().Length > 80)
+            return "Product name is required and must be 80 characters or fewer.";
+        if (string.IsNullOrWhiteSpace(request.Description) || request.Description.Trim().Length > 240)
+            return "Description is required and must be 240 characters or fewer.";
+        if (request.Price <= 0 || request.Price > 100000)
+            return "Enter a valid price greater than zero.";
+        if (request.Category is not ("meals" or "snacks" or "drinks"))
+            return "Choose meals, snacks, or drinks as the category.";
+        if (string.IsNullOrWhiteSpace(request.Icon) || request.Icon.Length > 8)
+            return "Enter a product icon.";
+        if (request.Stock < 0 || request.Stock > 100000)
+            return "Stock must be between 0 and 100000.";
+        return null;
+    }
+
+    private static void ApplyProduct(Product product, ProductRequest request)
+    {
+        product.Name = request.Name!.Trim();
+        product.Description = request.Description!.Trim();
+        product.Price = decimal.Round(request.Price, 2);
+        product.Category = request.Category!;
+        product.Icon = request.Icon!.Trim();
+        product.Stock = request.Stock;
+        product.IsAvailable = request.IsAvailable;
+    }
+
+// Adds a SQLite column only when that column is not already present.
+private static async Task EnsureSqliteColumnAsync(
+    DbConnection connection,
+    string tableName,
+    string columnName,
+    string columnDefinition)
+{
+    var columnExists = false;
+
+    await using (var checkCommand = connection.CreateCommand())
+    {
+        checkCommand.CommandText = $"PRAGMA table_info({tableName});";
+
+        await using var reader = await checkCommand.ExecuteReaderAsync();
+
+        while (await reader.ReadAsync())
+        {
+            if (string.Equals(
+                reader.GetString(1),
+                columnName,
+                StringComparison.OrdinalIgnoreCase))
+            {
+                columnExists = true;
+                break;
+            }
+        }
+    }
+
+    if (!columnExists)
+    {
+        await using var alterCommand = connection.CreateCommand();
+        alterCommand.CommandText =
+            $"ALTER TABLE {tableName} ADD COLUMN {columnDefinition};";
+        await alterCommand.ExecuteNonQueryAsync();
+    }
+}
+
 }
 
 // Defines the login data received from JavaScript.
@@ -339,6 +727,20 @@ public record LoginRequest(
 public record RegisterRequest(
     string? Username,
     string? Password
+);
+
+public record OrderLineRequest(int ProductId, int Quantity);
+public record OrderRequest(List<OrderLineRequest>? Items);
+public record AdminOrderRequest(int ProductId, int Quantity, string? CustomerName);
+public record OrderStatusRequest(string? Status);
+public record ProductRequest(
+    string? Name,
+    string? Description,
+    decimal Price,
+    string? Category,
+    string? Icon,
+    int Stock,
+    bool IsAvailable
 );
 
 // Defines the columns in the Users table.
@@ -360,6 +762,9 @@ public class AppDbContext : DbContext
     }
 
     public DbSet<AppUser> Users => Set<AppUser>();
+    public DbSet<Product> Products => Set<Product>();
+    public DbSet<FoodOrder> Orders => Set<FoodOrder>();
+    public DbSet<FoodOrderItem> OrderItems => Set<FoodOrderItem>();
 
     protected override void OnModelCreating(
         ModelBuilder modelBuilder
@@ -369,5 +774,32 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<AppUser>()
             .HasIndex(user => user.Username)
             .IsUnique();
+        modelBuilder.Entity<FoodOrder>()
+            .HasMany(order => order.Items)
+            .WithOne()
+            .HasForeignKey(item => item.OrderId);
     }
 }
+
+public class FoodOrder
+{
+    public int Id { get; set; }
+    public int UserId { get; set; }
+    public string StudentUsername { get; set; } = "";
+    public double Total { get; set; }
+    public string Status { get; set; } = "Preparing";
+    public DateTime CreatedAt { get; set; }
+    public List<FoodOrderItem> Items { get; set; } = [];
+}
+
+public class FoodOrderItem
+{
+    public int Id { get; set; }
+    public int OrderId { get; set; }
+    public int ProductId { get; set; }
+    public string ProductName { get; set; } = "";
+    public int Quantity { get; set; }
+    public double UnitPrice { get; set; }
+    public double LineTotal { get; set; }
+}
+

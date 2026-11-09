@@ -97,7 +97,7 @@
           return;
         }
 
-        window.location.href = "index.html";
+        window.location.href = result.role === "Admin" ? "admin.html" : "student.html";
       } catch {
         loginNotice.textContent = "Could not connect. Please try again in a moment.";
       }

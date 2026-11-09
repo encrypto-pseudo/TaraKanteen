@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f8f7f1">
+  <meta name="description" content="Manage TaraKanteen products, inventory, orders, and sales.">
+  <title>Admin dashboard — TaraKanteen</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="dashboard-page" data-dashboard="admin">
+  <header class="dashboard-header">
+    <nav class="dashboard-nav shell" aria-label="Admin navigation">
+      <a class="brand" href="admin.html"><span class="brand-mark">🥗</span> taraKanteen <span class="role-badge">ADMIN</span></a>
+      <div class="dashboard-nav-actions">
+        <span class="dashboard-user" data-user-name>Admin</span>
+        <button class="text-button" type="button" data-logout>Log out</button>
+      </div>
+    </nav>
+  </header>
+
+  <main class="dashboard-main shell">
+    <section class="dashboard-welcome">
+      <div>
+        <p class="eyebrow">Canteen operations</p>
+        <h1>Good morning<span>.</span></h1>
+        <p>Keep the menu stocked and every order moving.</p>
+      </div>
+      <div class="dashboard-date" id="dashboardDate"></div>
+    </section>
+
+    <p class="dashboard-alert" id="dashboardNotice" role="status" aria-live="polite"></p>
+
+    <section class="metric-grid" aria-label="Today's canteen summary">
+      <article class="metric-card"><span class="metric-label">Sales today</span><strong id="metricSales">₱0.00</strong><span class="metric-foot">Completed and active orders</span></article>
+      <article class="metric-card"><span class="metric-label">Orders today</span><strong id="metricOrders">0</strong><span class="metric-foot">Excluding cancelled orders</span></article>
+      <article class="metric-card"><span class="metric-label">Available products</span><strong id="metricProducts">0</strong><span class="metric-foot">Listed on the student menu</span></article>
+      <article class="metric-card metric-warning"><span class="metric-label">Low stock</span><strong id="metricLowStock">0</strong><span class="metric-foot">5 items or fewer remaining</span></article>
+    </section>
+
+    <section class="dashboard-panel" aria-labelledby="productsHeading">
+      <div class="panel-heading">
+        <div><p class="eyebrow">Menu and inventory</p><h2 id="productsHeading">Food products</h2></div>
+        <span class="panel-caption">Update prices, availability, and stock</span>
+      </div>
+      <form class="product-form" id="productForm">
+        <input id="productId" type="hidden">
+        <label class="dashboard-field"><span>Product name</span><input id="productName" maxlength="80" required placeholder="e.g. Chicken adobo bowl"></label>
+        <label class="dashboard-field"><span>Description</span><input id="productDescription" maxlength="240" required placeholder="Short menu description"></label>
+        <label class="dashboard-field"><span>Price (₱)</span><input id="productPrice" type="number" min="0.01" step="0.01" required></label>
+        <label class="dashboard-field"><span>Category</span><select id="productCategory"><option value="meals">Meals</option><option value="snacks">Snacks</option><option value="drinks">Drinks</option></select></label>
+        <label class="dashboard-field"><span>Icon</span><input id="productIcon" maxlength="8" value="🍽️" required aria-label="Product emoji icon"></label>
+        <label class="dashboard-field"><span>Stock</span><input id="productStock" type="number" min="0" max="100000" step="1" required></label>
+        <label class="dashboard-checkbox"><input id="productAvailable" type="checkbox" checked> Available to students</label>
+        <div class="product-form-actions">
+          <button class="dashboard-primary" type="submit" id="saveProductButton">Add product</button>
+          <button class="dashboard-secondary" type="button" id="cancelEditButton" hidden>Cancel edit</button>
+        </div>
+      </form>
+      <div class="table-wrap">
+        <table class="dashboard-table">
+          <thead><tr><th>Product</th><th>Category</th><th>Price</th><th>In stock</th><th>Menu status</th><th></th></tr></thead>
+          <tbody id="productsTable"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="dashboard-panel" aria-labelledby="counterOrderHeading">
+      <div class="panel-heading">
+        <div><p class="eyebrow">Counter sale</p><h2 id="counterOrderHeading">Record an order</h2></div>
+        <span class="panel-caption">Record a walk-in sale and update stock immediately</span>
+      </div>
+      <form class="counter-order-form" id="counterOrderForm">
+        <label class="dashboard-field"><span>Product</span><select id="counterProduct" required><option value="">Select a product</option></select></label>
+        <label class="dashboard-field"><span>Quantity</span><input id="counterQuantity" type="number" min="1" max="99" value="1" required></label>
+        <label class="dashboard-field"><span>Student or customer (optional)</span><input id="counterCustomer" maxlength="80" placeholder="Leave blank for walk-in"></label>
+        <button class="dashboard-primary" type="submit">Record sale</button>
+      </form>
+    </section>
+
+    <section class="dashboard-panel" aria-labelledby="ordersHeading">
+      <div class="panel-heading">
+        <div><p class="eyebrow">Order activity</p><h2 id="ordersHeading">Sales transactions</h2></div>
+        <span class="panel-caption">Student orders and pickup progress</span>
+      </div>
+      <div class="table-wrap">
+        <table class="dashboard-table order-table">
+          <thead><tr><th>Order</th><th>Student</th><th>Items</th><th>Total</th><th>Placed</th><th>Status</th></tr></thead>
+          <tbody id="ordersTable"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+  <script src="dashboard.js"></script>
+</body>
+</html>

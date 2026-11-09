@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f8f7f1">
+  <meta name="description" content="Browse available TaraKanteen food and drinks, and place a pickup order.">
+  <title>Student dashboard — TaraKanteen</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="dashboard-page" data-dashboard="student">
+  <header class="dashboard-header">
+    <nav class="dashboard-nav shell" aria-label="Student navigation">
+      <a class="brand" href="student.html"><span class="brand-mark">🥗</span> taraKanteen <span class="role-badge">STUDENT</span></a>
+      <div class="dashboard-nav-actions">
+        <span class="dashboard-user" data-user-name>Student</span>
+        <button class="text-button" type="button" data-logout>Log out</button>
+      </div>
+    </nav>
+  </header>
+
+  <main class="dashboard-main shell student-main">
+    <section class="dashboard-welcome student-welcome">
+      <div>
+        <p class="eyebrow">Your campus menu</p>
+        <h1>What sounds good<span>?</span></h1>
+        <p>Fresh picks, clear prices, ready for your next break.</p>
+      </div>
+      <a class="primary-link" href="#your-order">Your order <span id="studentCartCount">0</span></a>
+    </section>
+    <p class="dashboard-alert" id="dashboardNotice" role="status" aria-live="polite"></p>
+
+    <div class="student-layout">
+      <section class="student-menu" aria-labelledby="studentMenuHeading">
+        <div class="panel-heading">
+          <div><p class="eyebrow">Made fresh on campus</p><h2 id="studentMenuHeading">Available today</h2></div>
+          <label class="search-wrap"><span aria-hidden="true">⌕</span><input class="search" id="studentSearch" type="search" placeholder="Find a favorite" aria-label="Search available food and drinks"></label>
+        </div>
+        <div class="categories" role="group" aria-label="Filter menu by category">
+          <button class="category active" type="button" data-category="all" aria-pressed="true">Everything</button>
+          <button class="category" type="button" data-category="meals" aria-pressed="false">Meals</button>
+          <button class="category" type="button" data-category="snacks" aria-pressed="false">Snacks</button>
+          <button class="category" type="button" data-category="drinks" aria-pressed="false">Drinks</button>
+        </div>
+        <div class="student-product-grid" id="studentProducts" aria-live="polite"></div>
+      </section>
+
+      <aside class="student-order-column">
+        <section class="student-order-panel" id="your-order" aria-labelledby="yourOrderHeading">
+          <div class="panel-heading"><div><p class="eyebrow">Pickup order</p><h2 id="yourOrderHeading">Your order</h2></div><span class="order-bag" aria-hidden="true">🥡</span></div>
+          <div class="student-cart-items" id="studentCartItems"><p class="order-empty">Add something tasty from today’s menu.</p></div>
+          <div class="student-cart-total"><span>Total</span><strong id="studentCartTotal">₱0.00</strong></div>
+          <button class="dashboard-primary order-submit" id="placeOrderButton" type="button" disabled>Place order</button>
+          <p class="order-help">Your order is sent to the canteen for preparation.</p>
+        </section>
+        <section class="student-order-panel recent-orders" aria-labelledby="recentOrdersHeading">
+          <div class="panel-heading"><div><p class="eyebrow">Order history</p><h2 id="recentOrdersHeading">Recent orders</h2></div></div>
+          <div id="studentOrderHistory"><p class="order-empty">Your placed orders will appear here.</p></div>
+        </section>
+      </aside>
+    </div>
+  </main>
+  <script src="dashboard.js"></script>
+</body>
+</html>
