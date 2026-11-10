@@ -196,7 +196,20 @@ public partial class Program
 
                 await db.SaveChangesAsync();
             }
+             // Promote micooo to Admin for local development.
+        if (app.Environment.IsDevelopment())
+        {
+            var adminUser = await db.Users
+                .SingleOrDefaultAsync(u => u.Username == "micooo");
+
+            if (adminUser != null)
+            {
+                adminUser.Role = "Admin";
+                await db.SaveChangesAsync();
+            }
+          }
         }
+            
 
         app.UseHttpsRedirection();
 
