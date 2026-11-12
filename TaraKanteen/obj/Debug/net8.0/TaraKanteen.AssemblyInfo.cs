@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("TaraKanteen")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+82f82ebc120d364847686eeb53b81b0ccb7f8c0a")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+13603ca8953e046ba86b2b5ad134e490592b4609")]
 [assembly: System.Reflection.AssemblyProductAttribute("TaraKanteen")]
 [assembly: System.Reflection.AssemblyTitleAttribute("TaraKanteen")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

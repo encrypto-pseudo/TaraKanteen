@@ -65,3 +65,6 @@ C:\Users\LMI\Desktop\Grade 12\Sagittarius\hatdog\TaraKanteen\obj\Debug\net8.0\re
 C:\Users\LMI\Desktop\Grade 12\Sagittarius\hatdog\TaraKanteen\obj\Debug\net8.0\TaraKanteen.pdb
 C:\Users\LMI\Desktop\Grade 12\Sagittarius\hatdog\TaraKanteen\obj\Debug\net8.0\TaraKanteen.genruntimeconfig.cache
 C:\Users\LMI\Desktop\Grade 12\Sagittarius\hatdog\TaraKanteen\obj\Debug\net8.0\ref\TaraKanteen.dll
+C:\Users\LMI\Desktop\Grade 12\Sagittarius\hatdog\TaraKanteen\bin\Debug\net8.0\MailKit.dll
+C:\Users\LMI\Desktop\Grade 12\Sagittarius\hatdog\TaraKanteen\bin\Debug\net8.0\MimeKit.Core.dll
+C:\Users\LMI\Desktop\Grade 12\Sagittarius\hatdog\TaraKanteen\bin\Debug\net8.0\System.Formats.Asn1.dll

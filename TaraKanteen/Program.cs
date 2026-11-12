@@ -1,3 +1,4 @@
+using System.Security.Cryptography;
 using System.Security.Claims;
 using System.Data.Common;
 using Microsoft.AspNetCore.Authentication; 
@@ -122,6 +123,21 @@ public partial class Program
                 await EnsureSqliteColumnAsync(
                     connection, "Users", "Role",
                     "Role TEXT NOT NULL DEFAULT 'User'");
+                    await EnsureSqliteColumnAsync(
+    connection, "Users", "PasswordResetCodeHash",
+    "PasswordResetCodeHash TEXT NULL");
+
+await EnsureSqliteColumnAsync(
+    connection, "Users", "PasswordResetCodeExpiresAt",
+    "PasswordResetCodeExpiresAt TEXT NULL");
+
+await EnsureSqliteColumnAsync(
+    connection, "Users", "PasswordResetCodeAttempts",
+    "PasswordResetCodeAttempts INTEGER NOT NULL DEFAULT 0");
+
+await EnsureSqliteColumnAsync(
+    connection, "Users", "PasswordResetRequestedAt",
+    "PasswordResetRequestedAt TEXT NULL");
 
                 await EnsureSqliteColumnAsync(
                     connection, "Products", "Description",
@@ -381,7 +397,183 @@ public partial class Program
                 message = "Your account is ready. You can log in now."
             });
         });
+        // PASSWORD RESET: REQUEST CODE
+app.MapPost("/api/password-reset/request", async (
+    PasswordResetRequest request,
+    AppDbContext db,
+    IPasswordHasher<AppUser> hasher) =>
+{
+    if (string.IsNullOrWhiteSpace(request.Username))
+    {
+        return Results.BadRequest(new
+        {
+            message = "Enter your username."
+        });
+    }
 
+    var username = request.Username.Trim();
+
+    var user = await db.Users.SingleOrDefaultAsync(
+        u => u.Username == username
+    );
+
+    const string genericMessage =
+        "If the account exists, a reset code has been generated. Check the server terminal in development mode.";
+
+    // Do not reveal whether an account exists.
+    if (user is null)
+        return Results.Ok(new { message = genericMessage });
+
+    var now = DateTime.UtcNow;
+
+    // Allow only one new code request per minute.
+    if (user.PasswordResetRequestedAt.HasValue &&
+        now - user.PasswordResetRequestedAt.Value <
+        TimeSpan.FromSeconds(60))
+    {
+        return Results.Ok(new { message = genericMessage });
+    }
+
+    // Generate a random six-digit code.
+    var code = RandomNumberGenerator
+        .GetInt32(0, 1_000_000)
+        .ToString("D6");
+
+    // Store only the hashed code.
+    user.PasswordResetCodeHash =
+        hasher.HashPassword(user, code);
+
+    user.PasswordResetCodeExpiresAt =
+        now.AddMinutes(10);
+
+    user.PasswordResetCodeAttempts = 0;
+    user.PasswordResetRequestedAt = now;
+
+    await db.SaveChangesAsync();
+
+    // Local development only: show the code in VS Code terminal.
+    if (app.Environment.IsDevelopment())
+    {
+        app.Logger.LogWarning(
+            "DEVELOPMENT RESET CODE for {Username}: {Code}",
+            user.Username,
+            code
+        );
+    }
+
+    return Results.Ok(new
+    {
+        message = genericMessage
+    });
+});
+
+        // PASSWORD RESET: COMPLETE
+app.MapPost("/api/password-reset/complete", async (
+    PasswordResetCompleteRequest request,
+    AppDbContext db,
+    IPasswordHasher<AppUser> hasher,
+    HttpContext context) =>
+{
+    if (string.IsNullOrWhiteSpace(request.Username) ||
+        string.IsNullOrWhiteSpace(request.Code) ||
+        string.IsNullOrWhiteSpace(request.NewPassword))
+    {
+        return Results.BadRequest(new
+        {
+            message = "Complete all fields."
+        });
+    }
+
+    if (request.NewPassword.Length < 8 ||
+        request.NewPassword.Length > 128)
+    {
+        return Results.BadRequest(new
+        {
+            message = "Your new password must be between 8 and 128 characters."
+        });
+    }
+
+    var username = request.Username.Trim();
+
+    var user = await db.Users.SingleOrDefaultAsync(
+        u => u.Username == username
+    );
+
+    if (user is null)
+    {
+        return Results.BadRequest(new
+        {
+            message = "Invalid or expired code. Request a new one."
+        });
+    }
+
+    var now = DateTime.UtcNow;
+
+    if (string.IsNullOrEmpty(user.PasswordResetCodeHash) ||
+        !user.PasswordResetCodeExpiresAt.HasValue ||
+        user.PasswordResetCodeExpiresAt.Value <= now ||
+        user.PasswordResetCodeAttempts >= 5)
+    {
+        user.PasswordResetCodeHash = null;
+        user.PasswordResetCodeExpiresAt = null;
+        user.PasswordResetCodeAttempts = 0;
+
+        await db.SaveChangesAsync();
+
+        return Results.BadRequest(new
+        {
+            message = "Invalid or expired code. Request a new one."
+        });
+    }
+
+    var verification = hasher.VerifyHashedPassword(
+        user,
+        user.PasswordResetCodeHash,
+        request.Code.Trim()
+    );
+
+    if (verification == PasswordVerificationResult.Failed)
+    {
+        user.PasswordResetCodeAttempts++;
+
+        if (user.PasswordResetCodeAttempts >= 5)
+        {
+            user.PasswordResetCodeHash = null;
+            user.PasswordResetCodeExpiresAt = null;
+        }
+
+        await db.SaveChangesAsync();
+
+        return Results.BadRequest(new
+        {
+            message = "Invalid or expired code. Check your code and try again."
+        });
+    }
+
+    // Save the new password using the existing password hasher.
+    user.PasswordHash = hasher.HashPassword(
+        user,
+        request.NewPassword
+    );
+
+    // Invalidate the code after successful use.
+    user.PasswordResetCodeHash = null;
+    user.PasswordResetCodeExpiresAt = null;
+    user.PasswordResetCodeAttempts = 0;
+    user.PasswordResetRequestedAt = null;
+
+    await db.SaveChangesAsync();
+
+    // Sign out the current browser session, if any.
+    await context.SignOutAsync(
+        CookieAuthenticationDefaults.AuthenticationScheme
+    );
+
+    return Results.Ok(new
+    {
+        message = "Your password has been changed successfully. You can now log in."
+    });
+});
         // CURRENT USER ENDPOINT
         // Accessible only to signed-in users.
         app.MapGet("/api/me", (HttpContext context) =>
@@ -730,6 +922,16 @@ public record RegisterRequest(
     string? Password
 );
 
+public record PasswordResetRequest(
+    string? Username
+);
+
+public record PasswordResetCompleteRequest(
+    string? Username,
+    string? Code,
+    string? NewPassword
+);
+
 public record OrderLineRequest(int ProductId, int Quantity);
 public record OrderRequest(List<OrderLineRequest>? Items);
 public record AdminOrderRequest(int ProductId, int Quantity, string? CustomerName);
@@ -748,9 +950,20 @@ public record ProductRequest(
 public class AppUser
 {
     public int Id { get; set; }
+
     public string Username { get; set; } = "";
+
     public string PasswordHash { get; set; } = "";
+
     public string Role { get; set; } = "User";
+
+    public string? PasswordResetCodeHash { get; set; }
+
+    public DateTime? PasswordResetCodeExpiresAt { get; set; }
+
+    public int PasswordResetCodeAttempts { get; set; } = 0;
+
+    public DateTime? PasswordResetRequestedAt { get; set; }
 }
 
 // Defines the database and its tables.

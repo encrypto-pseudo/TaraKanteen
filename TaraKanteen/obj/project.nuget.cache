@@ -1,9 +1,10 @@
 {
   "version": 2,
-  "dgSpecHash": "DFKMEZ4dA7I=",
+  "dgSpecHash": "B9FwfpmVs0k=",
   "success": true,
   "projectFilePath": "C:\\Users\\LMI\\Desktop\\Grade 12\\Sagittarius\\hatdog\\TaraKanteen\\TaraKanteen.csproj",
   "expectedPackageFiles": [
+    "C:\\Users\\LMI\\.nuget\\packages\\mailkit\\5.0.0\\mailkit.5.0.0.nupkg.sha512",
     "C:\\Users\\LMI\\.nuget\\packages\\microsoft.data.sqlite.core\\8.0.22\\microsoft.data.sqlite.core.8.0.22.nupkg.sha512",
     "C:\\Users\\LMI\\.nuget\\packages\\microsoft.entityframeworkcore\\8.0.22\\microsoft.entityframeworkcore.8.0.22.nupkg.sha512",
     "C:\\Users\\LMI\\.nuget\\packages\\microsoft.entityframeworkcore.abstractions\\8.0.22\\microsoft.entityframeworkcore.abstractions.8.0.22.nupkg.sha512",
@@ -21,15 +22,17 @@
     "C:\\Users\\LMI\\.nuget\\packages\\microsoft.extensions.logging.abstractions\\8.0.2\\microsoft.extensions.logging.abstractions.8.0.2.nupkg.sha512",
     "C:\\Users\\LMI\\.nuget\\packages\\microsoft.extensions.options\\8.0.2\\microsoft.extensions.options.8.0.2.nupkg.sha512",
     "C:\\Users\\LMI\\.nuget\\packages\\microsoft.extensions.primitives\\8.0.0\\microsoft.extensions.primitives.8.0.0.nupkg.sha512",
+    "C:\\Users\\LMI\\.nuget\\packages\\mimekit.core\\5.0.0\\mimekit.core.5.0.0.nupkg.sha512",
     "C:\\Users\\LMI\\.nuget\\packages\\sqlitepclraw.bundle_e_sqlite3\\2.1.6\\sqlitepclraw.bundle_e_sqlite3.2.1.6.nupkg.sha512",
     "C:\\Users\\LMI\\.nuget\\packages\\sqlitepclraw.core\\2.1.6\\sqlitepclraw.core.2.1.6.nupkg.sha512",
     "C:\\Users\\LMI\\.nuget\\packages\\sqlitepclraw.lib.e_sqlite3\\2.1.6\\sqlitepclraw.lib.e_sqlite3.2.1.6.nupkg.sha512",
     "C:\\Users\\LMI\\.nuget\\packages\\sqlitepclraw.provider.e_sqlite3\\2.1.6\\sqlitepclraw.provider.e_sqlite3.2.1.6.nupkg.sha512",
+    "C:\\Users\\LMI\\.nuget\\packages\\system.formats.asn1\\10.0.0\\system.formats.asn1.10.0.0.nupkg.sha512",
     "C:\\Users\\LMI\\.nuget\\packages\\system.memory\\4.5.3\\system.memory.4.5.3.nupkg.sha512",
-    "C:\\Users\\LMI\\.nuget\\packages\\microsoft.netcore.app.ref\\8.0.32\\microsoft.netcore.app.ref.8.0.32.nupkg.sha512",
-    "C:\\Users\\LMI\\.nuget\\packages\\microsoft.windowsdesktop.app.ref\\8.0.32\\microsoft.windowsdesktop.app.ref.8.0.32.nupkg.sha512",
     "C:\\Users\\LMI\\.nuget\\packages\\microsoft.aspnetcore.app.ref\\8.0.32\\microsoft.aspnetcore.app.ref.8.0.32.nupkg.sha512",
-    "C:\\Users\\LMI\\.nuget\\packages\\microsoft.netcore.app.host.win-x64\\8.0.32\\microsoft.netcore.app.host.win-x64.8.0.32.nupkg.sha512"
+    "C:\\Users\\LMI\\.nuget\\packages\\microsoft.netcore.app.host.win-x64\\8.0.32\\microsoft.netcore.app.host.win-x64.8.0.32.nupkg.sha512",
+    "C:\\Users\\LMI\\.nuget\\packages\\microsoft.netcore.app.ref\\8.0.32\\microsoft.netcore.app.ref.8.0.32.nupkg.sha512",
+    "C:\\Users\\LMI\\.nuget\\packages\\microsoft.windowsdesktop.app.ref\\8.0.32\\microsoft.windowsdesktop.app.ref.8.0.32.nupkg.sha512"
   ],
   "logs": []
 }

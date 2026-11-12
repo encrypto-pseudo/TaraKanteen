@@ -8,10 +8,23 @@
     ".NETCoreApp,Version=v8.0": {
       "TaraKanteen/1.0.0": {
         "dependencies": {
+          "MailKit": "5.0.0",
           "Microsoft.EntityFrameworkCore.Sqlite": "8.0.22"
         },
         "runtime": {
           "TaraKanteen.dll": {}
+        }
+      },
+      "MailKit/5.0.0": {
+        "dependencies": {
+          "MimeKit.Core": "5.0.0",
+          "System.Formats.Asn1": "10.0.0"
+        },
+        "runtime": {
+          "lib/net8.0/MailKit.dll": {
+            "assemblyVersion": "5.0.0.0",
+            "fileVersion": "5.0.0.0"
+          }
         }
       },
       "Microsoft.Data.Sqlite.Core/8.0.22": {
@@ -151,6 +164,14 @@
           }
         }
       },
+      "MimeKit.Core/5.0.0": {
+        "runtime": {
+          "lib/net8.0/MimeKit.Core.dll": {
+            "assemblyVersion": "5.0.0.0",
+            "fileVersion": "5.0.0.0"
+          }
+        }
+      },
       "SQLitePCLRaw.bundle_e_sqlite3/2.1.6": {
         "dependencies": {
           "SQLitePCLRaw.lib.e_sqlite3": "2.1.6",
@@ -285,6 +306,14 @@
             "fileVersion": "2.1.6.2060"
           }
         }
+      },
+      "System.Formats.Asn1/10.0.0": {
+        "runtime": {
+          "lib/net8.0/System.Formats.Asn1.dll": {
+            "assemblyVersion": "10.0.0.0",
+            "fileVersion": "10.0.25.52411"
+          }
+        }
       }
     }
   },
@@ -293,6 +322,13 @@
       "type": "project",
       "serviceable": false,
       "sha512": ""
+    },
+    "MailKit/5.0.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-PG6hnsklTzd/iK9A6j03OxDOas9mh8zOBkbPzcsLmFOODE8Hw3HTy7HAKiJvVHXNpKc3/KMVG/4QvOAKCBbGhA==",
+      "path": "mailkit/5.0.0",
+      "hashPath": "mailkit.5.0.0.nupkg.sha512"
     },
     "Microsoft.Data.Sqlite.Core/8.0.22": {
       "type": "package",
@@ -385,6 +421,13 @@
       "path": "microsoft.extensions.options/8.0.2",
       "hashPath": "microsoft.extensions.options.8.0.2.nupkg.sha512"
     },
+    "MimeKit.Core/5.0.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-0RLaVyex/BjUGqiw9xtGwzyCMaBcsu33Rth61bDCeVeQaaQK7tjcy4TA+nHKTqwUdp4OGd+gnhuq2fuR+c20qA==",
+      "path": "mimekit.core/5.0.0",
+      "hashPath": "mimekit.core.5.0.0.nupkg.sha512"
+    },
     "SQLitePCLRaw.bundle_e_sqlite3/2.1.6": {
       "type": "package",
       "serviceable": true,
@@ -412,6 +455,13 @@
       "sha512": "sha512-PQ2Oq3yepLY4P7ll145P3xtx2bX8xF4PzaKPRpw9jZlKvfe4LE/saAV82inND9usn1XRpmxXk7Lal3MTI+6CNg==",
       "path": "sqlitepclraw.provider.e_sqlite3/2.1.6",
       "hashPath": "sqlitepclraw.provider.e_sqlite3.2.1.6.nupkg.sha512"
+    },
+    "System.Formats.Asn1/10.0.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-0QCZNYeRswlUVyo9N3hXrt5X9dqqRup53loU4K4JatdoYPhXHLrK9PwRtg5vP0Sr9QbdCOKk2luEdip/kV5Sig==",
+      "path": "system.formats.asn1/10.0.0",
+      "hashPath": "system.formats.asn1.10.0.0.nupkg.sha512"
     }
   }
 }

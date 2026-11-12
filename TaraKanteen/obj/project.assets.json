@@ -2,6 +2,23 @@
   "version": 4,
   "targets": {
     "net8.0": {
+      "MailKit/5.0.0": {
+        "type": "package",
+        "dependencies": {
+          "MimeKit.Core": "5.0.0",
+          "System.Formats.Asn1": "10.0.0"
+        },
+        "compile": {
+          "lib/net8.0/MailKit.dll": {
+            "related": ".dll.config;.pdb;.xml"
+          }
+        },
+        "runtime": {
+          "lib/net8.0/MailKit.dll": {
+            "related": ".dll.config;.pdb;.xml"
+          }
+        }
+      },
       "Microsoft.Data.Sqlite.Core/8.0.22": {
         "type": "package",
         "dependencies": {
@@ -298,6 +315,19 @@
           "buildTransitive/net6.0/_._": {}
         }
       },
+      "MimeKit.Core/5.0.0": {
+        "type": "package",
+        "compile": {
+          "lib/net8.0/MimeKit.Core.dll": {
+            "related": ".dll.config;.pdb;.xml"
+          }
+        },
+        "runtime": {
+          "lib/net8.0/MimeKit.Core.dll": {
+            "related": ".dll.config;.pdb;.xml"
+          }
+        }
+      },
       "SQLitePCLRaw.bundle_e_sqlite3/2.1.6": {
         "type": "package",
         "dependencies": {
@@ -429,6 +459,22 @@
           "lib/net6.0/SQLitePCLRaw.provider.e_sqlite3.dll": {}
         }
       },
+      "System.Formats.Asn1/10.0.0": {
+        "type": "package",
+        "compile": {
+          "lib/net8.0/System.Formats.Asn1.dll": {
+            "related": ".xml"
+          }
+        },
+        "runtime": {
+          "lib/net8.0/System.Formats.Asn1.dll": {
+            "related": ".xml"
+          }
+        },
+        "build": {
+          "buildTransitive/net8.0/_._": {}
+        }
+      },
       "System.Memory/4.5.3": {
         "type": "package",
         "compile": {
@@ -441,6 +487,47 @@
     }
   },
   "libraries": {
+    "MailKit/5.0.0": {
+      "sha512": "PG6hnsklTzd/iK9A6j03OxDOas9mh8zOBkbPzcsLmFOODE8Hw3HTy7HAKiJvVHXNpKc3/KMVG/4QvOAKCBbGhA==",
+      "type": "package",
+      "path": "mailkit/5.0.0",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "docs/ExchangeOAuth2.md",
+        "docs/FAQ.md",
+        "docs/GMailOAuth2.md",
+        "docs/PortingGuide.md",
+        "docs/README.md",
+        "icons/mailkit-50.png",
+        "lib/net10.0/MailKit.dll",
+        "lib/net10.0/MailKit.dll.config",
+        "lib/net10.0/MailKit.pdb",
+        "lib/net10.0/MailKit.xml",
+        "lib/net462/MailKit.dll",
+        "lib/net462/MailKit.pdb",
+        "lib/net462/MailKit.xml",
+        "lib/net47/MailKit.dll",
+        "lib/net47/MailKit.pdb",
+        "lib/net47/MailKit.xml",
+        "lib/net48/MailKit.dll",
+        "lib/net48/MailKit.pdb",
+        "lib/net48/MailKit.xml",
+        "lib/net8.0/MailKit.dll",
+        "lib/net8.0/MailKit.dll.config",
+        "lib/net8.0/MailKit.pdb",
+        "lib/net8.0/MailKit.xml",
+        "lib/netstandard2.0/MailKit.dll",
+        "lib/netstandard2.0/MailKit.pdb",
+        "lib/netstandard2.0/MailKit.xml",
+        "lib/netstandard2.1/MailKit.dll",
+        "lib/netstandard2.1/MailKit.dll.config",
+        "lib/netstandard2.1/MailKit.pdb",
+        "lib/netstandard2.1/MailKit.xml",
+        "mailkit.5.0.0.nupkg.sha512",
+        "mailkit.nuspec"
+      ]
+    },
     "Microsoft.Data.Sqlite.Core/8.0.22": {
       "sha512": "x09ObAhKeabVMKRi3/jU0HvIcm0T/RxjSdqGmwbTeya/Iev+aPIB69atBuR+kfbZ9P+EspBSAQ0kQ5Qc/REsXQ==",
       "type": "package",
@@ -916,6 +1003,44 @@
         "useSharedDesignerContext.txt"
       ]
     },
+    "MimeKit.Core/5.0.0": {
+      "sha512": "0RLaVyex/BjUGqiw9xtGwzyCMaBcsu33Rth61bDCeVeQaaQK7tjcy4TA+nHKTqwUdp4OGd+gnhuq2fuR+c20qA==",
+      "type": "package",
+      "path": "mimekit.core/5.0.0",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "docs/FAQ.md",
+        "docs/README.md",
+        "icons/mimekit-50.png",
+        "lib/net10.0/MimeKit.Core.dll",
+        "lib/net10.0/MimeKit.Core.dll.config",
+        "lib/net10.0/MimeKit.Core.pdb",
+        "lib/net10.0/MimeKit.Core.xml",
+        "lib/net462/MimeKit.Core.dll",
+        "lib/net462/MimeKit.Core.pdb",
+        "lib/net462/MimeKit.Core.xml",
+        "lib/net47/MimeKit.Core.dll",
+        "lib/net47/MimeKit.Core.pdb",
+        "lib/net47/MimeKit.Core.xml",
+        "lib/net48/MimeKit.Core.dll",
+        "lib/net48/MimeKit.Core.pdb",
+        "lib/net48/MimeKit.Core.xml",
+        "lib/net8.0/MimeKit.Core.dll",
+        "lib/net8.0/MimeKit.Core.dll.config",
+        "lib/net8.0/MimeKit.Core.pdb",
+        "lib/net8.0/MimeKit.Core.xml",
+        "lib/netstandard2.0/MimeKit.Core.dll",
+        "lib/netstandard2.0/MimeKit.Core.pdb",
+        "lib/netstandard2.0/MimeKit.Core.xml",
+        "lib/netstandard2.1/MimeKit.Core.dll",
+        "lib/netstandard2.1/MimeKit.Core.dll.config",
+        "lib/netstandard2.1/MimeKit.Core.pdb",
+        "lib/netstandard2.1/MimeKit.Core.xml",
+        "mimekit.core.5.0.0.nupkg.sha512",
+        "mimekit.core.nuspec"
+      ]
+    },
     "SQLitePCLRaw.bundle_e_sqlite3/2.1.6": {
       "sha512": "BmAf6XWt4TqtowmiWe4/5rRot6GerAeklmOPfviOvwLoF5WwgxcJHAxZtySuyW9r9w+HLILnm8VfJFLCUJYW8A==",
       "type": "package",
@@ -1005,6 +1130,35 @@
         "sqlitepclraw.provider.e_sqlite3.nuspec"
       ]
     },
+    "System.Formats.Asn1/10.0.0": {
+      "sha512": "0QCZNYeRswlUVyo9N3hXrt5X9dqqRup53loU4K4JatdoYPhXHLrK9PwRtg5vP0Sr9QbdCOKk2luEdip/kV5Sig==",
+      "type": "package",
+      "path": "system.formats.asn1/10.0.0",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "Icon.png",
+        "PACKAGE.md",
+        "THIRD-PARTY-NOTICES.TXT",
+        "buildTransitive/net461/System.Formats.Asn1.targets",
+        "buildTransitive/net462/_._",
+        "buildTransitive/net8.0/_._",
+        "buildTransitive/netcoreapp2.0/System.Formats.Asn1.targets",
+        "lib/net10.0/System.Formats.Asn1.dll",
+        "lib/net10.0/System.Formats.Asn1.xml",
+        "lib/net462/System.Formats.Asn1.dll",
+        "lib/net462/System.Formats.Asn1.xml",
+        "lib/net8.0/System.Formats.Asn1.dll",
+        "lib/net8.0/System.Formats.Asn1.xml",
+        "lib/net9.0/System.Formats.Asn1.dll",
+        "lib/net9.0/System.Formats.Asn1.xml",
+        "lib/netstandard2.0/System.Formats.Asn1.dll",
+        "lib/netstandard2.0/System.Formats.Asn1.xml",
+        "system.formats.asn1.10.0.0.nupkg.sha512",
+        "system.formats.asn1.nuspec",
+        "useSharedDesignerContext.txt"
+      ]
+    },
     "System.Memory/4.5.3": {
       "sha512": "3oDzvc/zzetpTKWMShs1AADwZjQ/36HnsufHRPcOjyRAAMLDlu2iD33MBI2opxnezcVUtXyqDXXjoFMOU9c7SA==",
       "type": "package",
@@ -1029,6 +1183,7 @@
   },
   "projectFileDependencyGroups": {
     "net8.0": [
+      "MailKit >= 5.0.0",
       "Microsoft.EntityFrameworkCore.Sqlite >= 8.0.22"
     ]
   },
@@ -1084,6 +1239,10 @@
         "framework": "net8.0",
         "targetAlias": "net8.0",
         "dependencies": {
+          "MailKit": {
+            "target": "Package",
+            "version": "[5.0.0, )"
+          },
           "Microsoft.EntityFrameworkCore.Sqlite": {
             "target": "Package",
             "version": "[8.0.22, )"
