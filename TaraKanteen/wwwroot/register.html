@@ -30,7 +30,7 @@
       <section class="auth-form-panel" aria-labelledby="registerHeading">
         <div class="auth-form-content">
           <h2 id="registerHeading">Join the table</h2>
-          <p class="auth-intro">Create an account to make your next break a little tastier.</p>
+          <p class="auth-intro">Create an account using your school email address.</p>
 
           <form id="registerForm">
             <label class="auth-field" for="username">
@@ -38,10 +38,16 @@
               <input class="auth-input" id="username" name="username" type="text" placeholder="Choose a username" autocomplete="username" minlength="3" maxlength="32" required>
             </label>
 
+            <label class="auth-field" for="email">
+              <span>School email</span>
+              <input class="auth-input" id="email" name="email" type="email" placeholder="example_surname@lifeinstitute.edu.ph" autocomplete="email" required>
+              <small>Use your @lifeinstitute.edu.ph address. You will verify it after logging in.</small>
+            </label>
+
             <label class="auth-field" for="password">
               <span>Password</span>
               <div class="auth-input-wrap">
-                <input class="auth-input" id="password" name="password" type="password" placeholder="At least 8 characters" autocomplete="new-password" minlength="8" required>
+                <input class="auth-input" id="password" name="password" type="password" placeholder="At least 8 characters" autocomplete="new-password" minlength="8" maxlength="128" required>
                 <button class="auth-password-toggle" id="togglePassword" type="button" aria-controls="password" aria-pressed="false">Show</button>
               </div>
             </label>
@@ -68,6 +74,7 @@
   <script>
     const registerForm = document.querySelector("#registerForm");
     const usernameInput = document.querySelector("#username");
+    const emailInput = document.querySelector("#email");
     const passwordInput = document.querySelector("#password");
     const confirmPasswordInput = document.querySelector("#confirmPassword");
     const registerNotice = document.querySelector("#registerNotice");
@@ -89,18 +96,28 @@
       registerNotice.textContent = "";
       registerNotice.classList.remove("success");
 
+      if (!emailInput.value.trim().toLowerCase().endsWith("@lifeinstitute.edu.ph")) {
+        registerNotice.textContent = "Use your @lifeinstitute.edu.ph school email address.";
+        emailInput.focus();
+        return;
+      }
+
       if (passwordInput.value !== confirmPasswordInput.value) {
         registerNotice.textContent = "Your passwords do not match.";
         confirmPasswordInput.focus();
         return;
       }
 
+      const button = registerForm.querySelector("button[type='submit']");
+      button.disabled = true;
+
       try {
         const response = await fetch("/api/register", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            username: usernameInput.value,
+            username: usernameInput.value.trim(),
+            email: emailInput.value.trim(),
             password: passwordInput.value
           })
         });
@@ -111,11 +128,13 @@
           return;
         }
 
-        registerNotice.textContent = result.message;
+        registerNotice.textContent = result.message || "Account created. Log in to verify your school email.";
         registerNotice.classList.add("success");
         registerForm.reset();
       } catch {
         registerNotice.textContent = "Could not connect. Please try again in a moment.";
+      } finally {
+        button.disabled = false;
       }
     });
 

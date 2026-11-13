@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f8f7f1">
+  <title>Account recovery email — TaraKanteen</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="auth-page">
+  <header class="auth-header">
+    <div class="auth-header-inner shell">
+      <a class="brand" href="index.html" aria-label="TaraKanteen home"><span class="brand-mark">🥗</span> taraKanteen</a>
+      <a class="auth-home-link" href="index.html">Back to home</a>
+    </div>
+  </header>
+
+  <main class="auth-main">
+    <div class="auth-layout">
+      <section class="auth-story" aria-label="Account recovery">
+        <div class="auth-story-copy">
+          <p class="eyebrow">Account security</p>
+          <h1>Keep your account yours.</h1>
+          <p>Verify your school email so it can be used for password recovery.</p>
+        </div>
+        <div class="auth-food" aria-hidden="true">✉️</div>
+      </section>
+
+      <section class="auth-form-panel" aria-labelledby="accountHeading">
+        <div class="auth-form-content">
+          <h2 id="accountHeading">Recovery email</h2>
+          <p class="auth-intro" id="accountStatus">Checking your account...</p>
+
+          <form id="emailRequestForm">
+            <label class="auth-field" for="email">
+              <span>School email</span>
+              <input class="auth-input" id="email" type="email" autocomplete="email" placeholder="example_surname@lifeinstitute.edu.ph" required>
+            </label>
+            <button class="auth-submit" type="submit">Send verification code</button>
+            <p class="auth-notice" id="requestNotice" role="status" aria-live="polite"></p>
+          </form>
+
+          <section id="verifySection" hidden>
+            <hr>
+            <h2>Verify your email</h2>
+            <p class="auth-intro">In local development, the six-digit code appears in the VS Code terminal. It expires in 10 minutes.</p>
+            <form id="verifyForm">
+              <label class="auth-field" for="code">
+                <span>Six-digit code</span>
+                <input class="auth-input" id="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" placeholder="000000" required>
+              </label>
+              <button class="auth-submit" type="submit">Verify school email</button>
+              <p class="auth-notice" id="verifyNotice" role="status" aria-live="polite"></p>
+            </form>
+          </section>
+
+          <p class="auth-switch"><a href="forgot-password.html">Go to password recovery</a></p>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <footer class="auth-footer">Good food. More school day. © <span id="year"></span></footer>
+
+  <script>
+    const emailInput = document.querySelector("#email");
+    const accountStatus = document.querySelector("#accountStatus");
+    const requestForm = document.querySelector("#emailRequestForm");
+    const verifyForm = document.querySelector("#verifyForm");
+    const verifySection = document.querySelector("#verifySection");
+    const requestNotice = document.querySelector("#requestNotice");
+    const verifyNotice = document.querySelector("#verifyNotice");
+
+    function showNotice(element, message, success = false) {
+      element.textContent = message;
+      element.classList.toggle("success", success);
+    }
+
+    async function loadAccountEmail() {
+      try {
+        const response = await fetch("/api/account/email-status");
+        if (response.status === 401) {
+          accountStatus.textContent = "Please log in before adding a recovery email.";
+          requestForm.hidden = true;
+          return;
+        }
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.message || "Unable to load account status.");
+
+        if (result.emailVerified && result.email) {
+          accountStatus.textContent = `Verified recovery email: ${result.email}`;
+          emailInput.value = result.email;
+        } else if (result.pendingEmail) {
+          accountStatus.textContent = `Email awaiting verification: ${result.pendingEmail}`;
+          emailInput.value = result.pendingEmail;
+        } else {
+          accountStatus.textContent = "Add your @lifeinstitute.edu.ph email address. It will not be used for recovery until verified.";
+        }
+      } catch (error) {
+        accountStatus.textContent = error.message || "Could not load your account. Please try again.";
+      }
+    }
+
+    requestForm.addEventListener("submit", async event => {
+      event.preventDefault();
+      showNotice(requestNotice, "");
+      const button = requestForm.querySelector("button");
+      button.disabled = true;
+      try {
+        const response = await fetch("/api/account/email/request-verification", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: emailInput.value.trim() })
+        });
+        const result = await response.json();
+        showNotice(requestNotice, result.message || "Request received.", response.ok);
+        if (response.ok && !result.message?.toLowerCase().includes("already verified")) {
+          verifySection.hidden = false;
+          document.querySelector("#code").focus();
+        }
+      } catch {
+        showNotice(requestNotice, "Could not connect. Please try again.");
+      } finally {
+        button.disabled = false;
+      }
+    });
+
+    verifyForm.addEventListener("submit", async event => {
+      event.preventDefault();
+      showNotice(verifyNotice, "");
+      const button = verifyForm.querySelector("button");
+      button.disabled = true;
+      try {
+        const response = await fetch("/api/account/email/verify", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ code: document.querySelector("#code").value.trim() })
+        });
+        const result = await response.json();
+        if (!response.ok) {
+          showNotice(verifyNotice, result.message || "Email verification failed.");
+          return;
+        }
+        showNotice(verifyNotice, result.message || "School email verified.", true);
+        accountStatus.textContent = `Verified recovery email: ${result.email}`;
+        emailInput.value = result.email || emailInput.value;
+        verifySection.hidden = true;
+      } catch {
+        showNotice(verifyNotice, "Could not connect. Please try again.");
+      } finally {
+        button.disabled = false;
+      }
+    });
+
+    document.querySelector("#year").textContent = String(new Date().getFullYear());
+    loadAccountEmail();
+  </script>
+</body>
+</html>

@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using System.Security.Claims;
 using System.Data.Common;
+using System.Net.Mail;
 using Microsoft.AspNetCore.Authentication; 
 using Microsoft.AspNetCore.Authentication.Cookies; 
 using Microsoft.AspNetCore.Identity; 
@@ -123,21 +124,50 @@ public partial class Program
                 await EnsureSqliteColumnAsync(
                     connection, "Users", "Role",
                     "Role TEXT NOT NULL DEFAULT 'User'");
-                    await EnsureSqliteColumnAsync(
-    connection, "Users", "PasswordResetCodeHash",
-    "PasswordResetCodeHash TEXT NULL");
 
-await EnsureSqliteColumnAsync(
-    connection, "Users", "PasswordResetCodeExpiresAt",
-    "PasswordResetCodeExpiresAt TEXT NULL");
+                // Email addresses are nullable so existing accounts remain valid
+                // until each user adds and verifies a school email address.
+                await EnsureSqliteColumnAsync(
+                    connection, "Users", "Email",
+                    "Email TEXT NULL");
+                await EnsureSqliteColumnAsync(
+                    connection, "Users", "EmailVerified",
+                    "EmailVerified INTEGER NOT NULL DEFAULT 0");
+                await EnsureSqliteColumnAsync(
+                    connection, "Users", "PendingEmail",
+                    "PendingEmail TEXT NULL");
+                await EnsureSqliteColumnAsync(
+                    connection, "Users", "EmailVerificationCodeHash",
+                    "EmailVerificationCodeHash TEXT NULL");
+                await EnsureSqliteColumnAsync(
+                    connection, "Users", "EmailVerificationCodeExpiresAt",
+                    "EmailVerificationCodeExpiresAt TEXT NULL");
+                await EnsureSqliteColumnAsync(
+                    connection, "Users", "EmailVerificationCodeAttempts",
+                    "EmailVerificationCodeAttempts INTEGER NOT NULL DEFAULT 0");
+                await EnsureSqliteColumnAsync(
+                    connection, "Users", "EmailVerificationRequestedAt",
+                    "EmailVerificationRequestedAt TEXT NULL");
 
-await EnsureSqliteColumnAsync(
-    connection, "Users", "PasswordResetCodeAttempts",
-    "PasswordResetCodeAttempts INTEGER NOT NULL DEFAULT 0");
+                await EnsureSqliteColumnAsync(
+                    connection, "Users", "PasswordResetCodeHash",
+                    "PasswordResetCodeHash TEXT NULL");
+                await EnsureSqliteColumnAsync(
+                    connection, "Users", "PasswordResetCodeExpiresAt",
+                    "PasswordResetCodeExpiresAt TEXT NULL");
+                await EnsureSqliteColumnAsync(
+                    connection, "Users", "PasswordResetCodeAttempts",
+                    "PasswordResetCodeAttempts INTEGER NOT NULL DEFAULT 0");
+                await EnsureSqliteColumnAsync(
+                    connection, "Users", "PasswordResetRequestedAt",
+                    "PasswordResetRequestedAt TEXT NULL");
 
-await EnsureSqliteColumnAsync(
-    connection, "Users", "PasswordResetRequestedAt",
-    "PasswordResetRequestedAt TEXT NULL");
+                // A verified email address can belong to only one account.
+                await db.Database.ExecuteSqlRawAsync("""
+                    CREATE UNIQUE INDEX IF NOT EXISTS IX_Users_Email
+                    ON Users (Email)
+                    WHERE Email IS NOT NULL AND Email <> '';
+                    """);
 
                 await EnsureSqliteColumnAsync(
                     connection, "Products", "Description",
@@ -332,15 +362,24 @@ await EnsureSqliteColumnAsync(
             IPasswordHasher<AppUser> hasher) =>
         {
             if (string.IsNullOrWhiteSpace(request.Username) ||
-                string.IsNullOrWhiteSpace(request.Password))
+                string.IsNullOrWhiteSpace(request.Password) ||
+                string.IsNullOrWhiteSpace(request.Email))
             {
                 return Results.BadRequest(new
                 {
-                    message = "Enter a username and password."
+                    message = "Enter a username, school email, and password."
                 });
             }
 
             var username = request.Username.Trim();
+            var email = NormalizeSchoolEmail(request.Email);
+            if (email is null)
+            {
+                return Results.BadRequest(new
+                {
+                    message = "Use a valid school email ending in @lifeinstitute.edu.ph."
+                });
+            }
 
             if (username.Length < 3 || username.Length > 32)
             {
@@ -366,11 +405,22 @@ await EnsureSqliteColumnAsync(
                 });
             }
 
-                var user = new AppUser
-{
-            Username = username,
-    Role = "User"
-};
+            if (await db.Users.AnyAsync(user =>
+                (user.Email != null && user.Email.ToLower() == email) ||
+                (user.PendingEmail != null && user.PendingEmail.ToLower() == email)))
+            {
+                return Results.Conflict(new
+                {
+                    message = "That school email is already linked to or pending verification on another account."
+                });
+            }
+
+            var user = new AppUser
+            {
+                Username = username,
+                Role = "User",
+                PendingEmail = email
+            };
 
             user.PasswordHash = hasher.HashPassword(user, request.Password);
             db.Users.Add(user);
@@ -389,191 +439,346 @@ await EnsureSqliteColumnAsync(
                     });
                 }
 
+                if (await db.Users.AnyAsync(existing =>
+                    (existing.Email != null && existing.Email.ToLower() == email) ||
+                    (existing.PendingEmail != null && existing.PendingEmail.ToLower() == email)))
+                {
+                    return Results.Conflict(new
+                    {
+                        message = "That school email is already linked to or pending verification on another account."
+                    });
+                }
+
                 throw;
             }
 
             return Results.Created("/login.html", new
             {
-                message = "Your account is ready. You can log in now."
+                message = "Your account is ready. Log in, then verify your school email before using password recovery."
             });
         });
-        // PASSWORD RESET: REQUEST CODE
-app.MapPost("/api/password-reset/request", async (
-    PasswordResetRequest request,
-    AppDbContext db,
-    IPasswordHasher<AppUser> hasher) =>
-{
-    if (string.IsNullOrWhiteSpace(request.Username))
-    {
-        return Results.BadRequest(new
+        // EMAIL: CURRENT ACCOUNT EMAIL STATUS
+        app.MapGet("/api/account/email-status", async (
+            AppDbContext db,
+            HttpContext context) =>
         {
-            message = "Enter your username."
+            var userIdValue = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!int.TryParse(userIdValue, out var userId))
+                return Results.Unauthorized();
+
+            var user = await db.Users.SingleOrDefaultAsync(u => u.Id == userId);
+            if (user is null)
+                return Results.Unauthorized();
+
+            return Results.Ok(new
+            {
+                email = user.Email,
+                emailVerified = user.EmailVerified,
+                pendingEmail = user.PendingEmail
+            });
+        }).RequireAuthorization();
+
+        // EMAIL: REQUEST A VERIFICATION CODE
+        // Existing accounts use this after signing in to attach a school email.
+        // This stage is development-only: the code is logged to the server terminal.
+        app.MapPost("/api/account/email/request-verification", async (
+            EmailVerificationRequest request,
+            AppDbContext db,
+            IPasswordHasher<AppUser> hasher,
+            HttpContext context) =>
+        {
+            if (!app.Environment.IsDevelopment())
+            {
+                return Results.Problem(
+                    "Email delivery is not configured. Email verification is available only in local development for now.",
+                    statusCode: StatusCodes.Status503ServiceUnavailable);
+            }
+
+            var email = NormalizeSchoolEmail(request.Email);
+            if (email is null)
+            {
+                return Results.BadRequest(new
+                {
+                    message = "Enter a valid school email ending in @lifeinstitute.edu.ph."
+                });
+            }
+
+            var userIdValue = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!int.TryParse(userIdValue, out var userId))
+                return Results.Unauthorized();
+
+            var user = await db.Users.SingleOrDefaultAsync(u => u.Id == userId);
+            if (user is null)
+                return Results.Unauthorized();
+
+            if (string.Equals(user.Email, email, StringComparison.OrdinalIgnoreCase) && user.EmailVerified)
+            {
+                return Results.Ok(new
+                {
+                    message = "This school email is already verified on your account."
+                });
+            }
+
+            var emailInUse = await db.Users.AnyAsync(u =>
+                u.Id != userId &&
+                ((u.Email != null && u.Email.ToLower() == email) ||
+                 (u.PendingEmail != null && u.PendingEmail.ToLower() == email)));
+            if (emailInUse)
+            {
+                return Results.Conflict(new
+                {
+                    message = "That school email is already linked to another account."
+                });
+            }
+
+            var now = DateTime.UtcNow;
+            if (user.EmailVerificationRequestedAt.HasValue &&
+                now - user.EmailVerificationRequestedAt.Value < TimeSpan.FromSeconds(60))
+            {
+                return Results.Ok(new
+                {
+                    message = "A verification request was recently made. Please wait one minute before requesting another code."
+                });
+            }
+
+            var code = RandomNumberGenerator.GetInt32(0, 1_000_000).ToString("D6");
+            user.PendingEmail = email;
+            user.EmailVerificationCodeHash = hasher.HashPassword(user, code);
+            user.EmailVerificationCodeExpiresAt = now.AddMinutes(10);
+            user.EmailVerificationCodeAttempts = 0;
+            user.EmailVerificationRequestedAt = now;
+
+            await db.SaveChangesAsync();
+
+            app.Logger.LogWarning(
+                "DEVELOPMENT EMAIL VERIFICATION CODE for {Username} ({Email}): {Code}",
+                user.Username,
+                email,
+                code);
+
+            return Results.Ok(new
+            {
+                message = "A verification code was generated. In local development, check the VS Code terminal. The code expires in 10 minutes."
+            });
+        }).RequireAuthorization();
+
+        // EMAIL: VERIFY THE SCHOOL EMAIL ADDRESS
+        app.MapPost("/api/account/email/verify", async (
+            EmailVerificationCompleteRequest request,
+            AppDbContext db,
+            IPasswordHasher<AppUser> hasher,
+            HttpContext context) =>
+        {
+            if (!app.Environment.IsDevelopment())
+            {
+                return Results.Problem(
+                    "Email delivery is not configured. Email verification is available only in local development for now.",
+                    statusCode: StatusCodes.Status503ServiceUnavailable);
+            }
+
+            if (string.IsNullOrWhiteSpace(request.Code) || request.Code.Trim().Length != 6 ||
+                !request.Code.Trim().All(char.IsDigit))
+            {
+                return Results.BadRequest(new { message = "Enter the six-digit verification code." });
+            }
+
+            var userIdValue = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!int.TryParse(userIdValue, out var userId))
+                return Results.Unauthorized();
+
+            var user = await db.Users.SingleOrDefaultAsync(u => u.Id == userId);
+            if (user is null)
+                return Results.Unauthorized();
+
+            var now = DateTime.UtcNow;
+            if (string.IsNullOrEmpty(user.PendingEmail) ||
+                string.IsNullOrEmpty(user.EmailVerificationCodeHash) ||
+                !user.EmailVerificationCodeExpiresAt.HasValue ||
+                user.EmailVerificationCodeExpiresAt.Value <= now ||
+                user.EmailVerificationCodeAttempts >= 5)
+            {
+                user.EmailVerificationCodeHash = null;
+                user.EmailVerificationCodeExpiresAt = null;
+                user.EmailVerificationCodeAttempts = 0;
+                await db.SaveChangesAsync();
+                return Results.BadRequest(new { message = "The code is invalid or expired. Request a new one." });
+            }
+
+            var result = hasher.VerifyHashedPassword(
+                user,
+                user.EmailVerificationCodeHash,
+                request.Code.Trim());
+
+            if (result == PasswordVerificationResult.Failed)
+            {
+                user.EmailVerificationCodeAttempts++;
+                if (user.EmailVerificationCodeAttempts >= 5)
+                {
+                    user.EmailVerificationCodeHash = null;
+                    user.EmailVerificationCodeExpiresAt = null;
+                }
+                await db.SaveChangesAsync();
+                return Results.BadRequest(new { message = "Incorrect code. Check it and try again." });
+            }
+
+            var emailInUse = await db.Users.AnyAsync(u =>
+                u.Id != userId &&
+                ((u.Email != null && u.Email.ToLower() == user.PendingEmail) ||
+                 (u.PendingEmail != null && u.PendingEmail.ToLower() == user.PendingEmail)));
+            if (emailInUse)
+            {
+                user.EmailVerificationCodeHash = null;
+                user.EmailVerificationCodeExpiresAt = null;
+                await db.SaveChangesAsync();
+                return Results.Conflict(new { message = "That school email is already linked to another account." });
+            }
+
+            user.Email = user.PendingEmail;
+            user.EmailVerified = true;
+            user.PendingEmail = null;
+            user.EmailVerificationCodeHash = null;
+            user.EmailVerificationCodeExpiresAt = null;
+            user.EmailVerificationCodeAttempts = 0;
+            user.EmailVerificationRequestedAt = null;
+
+            await db.SaveChangesAsync();
+
+            return Results.Ok(new
+            {
+                message = "Your school email has been verified and linked to your account.",
+                email = user.Email,
+                emailVerified = user.EmailVerified
+            });
+        }).RequireAuthorization();
+
+        // PASSWORD RESET: REQUEST A CODE USING A VERIFIED SCHOOL EMAIL
+        // In local development, the code is printed to the VS Code terminal.
+        app.MapPost("/api/password-reset/request", async (
+            PasswordResetRequest request,
+            AppDbContext db,
+            IPasswordHasher<AppUser> hasher) =>
+        {
+            if (!app.Environment.IsDevelopment())
+            {
+                return Results.Problem(
+                    "Password-reset email delivery is not configured. This development endpoint is disabled outside local development.",
+                    statusCode: StatusCodes.Status503ServiceUnavailable);
+            }
+
+            var email = NormalizeSchoolEmail(request.Email);
+            const string genericMessage =
+                "If a verified account matches that school email, a reset code has been generated. Check the server terminal in development mode.";
+
+            if (email is null)
+                return Results.Ok(new { message = genericMessage });
+
+            var user = await db.Users.SingleOrDefaultAsync(u =>
+                u.Email != null && u.Email.ToLower() == email && u.EmailVerified);
+
+            // Do not reveal whether an account or verified email exists.
+            if (user is null)
+                return Results.Ok(new { message = genericMessage });
+
+            var now = DateTime.UtcNow;
+            if (user.PasswordResetRequestedAt.HasValue &&
+                now - user.PasswordResetRequestedAt.Value < TimeSpan.FromSeconds(60))
+            {
+                return Results.Ok(new { message = genericMessage });
+            }
+
+            var code = RandomNumberGenerator.GetInt32(0, 1_000_000).ToString("D6");
+            user.PasswordResetCodeHash = hasher.HashPassword(user, code);
+            user.PasswordResetCodeExpiresAt = now.AddMinutes(10);
+            user.PasswordResetCodeAttempts = 0;
+            user.PasswordResetRequestedAt = now;
+            await db.SaveChangesAsync();
+
+            app.Logger.LogWarning(
+                "DEVELOPMENT PASSWORD RESET CODE for {Username} ({Email}): {Code}",
+                user.Username,
+                email,
+                code);
+
+            return Results.Ok(new { message = genericMessage });
         });
-    }
 
-    var username = request.Username.Trim();
-
-    var user = await db.Users.SingleOrDefaultAsync(
-        u => u.Username == username
-    );
-
-    const string genericMessage =
-        "If the account exists, a reset code has been generated. Check the server terminal in development mode.";
-
-    // Do not reveal whether an account exists.
-    if (user is null)
-        return Results.Ok(new { message = genericMessage });
-
-    var now = DateTime.UtcNow;
-
-    // Allow only one new code request per minute.
-    if (user.PasswordResetRequestedAt.HasValue &&
-        now - user.PasswordResetRequestedAt.Value <
-        TimeSpan.FromSeconds(60))
-    {
-        return Results.Ok(new { message = genericMessage });
-    }
-
-    // Generate a random six-digit code.
-    var code = RandomNumberGenerator
-        .GetInt32(0, 1_000_000)
-        .ToString("D6");
-
-    // Store only the hashed code.
-    user.PasswordResetCodeHash =
-        hasher.HashPassword(user, code);
-
-    user.PasswordResetCodeExpiresAt =
-        now.AddMinutes(10);
-
-    user.PasswordResetCodeAttempts = 0;
-    user.PasswordResetRequestedAt = now;
-
-    await db.SaveChangesAsync();
-
-    // Local development only: show the code in VS Code terminal.
-    if (app.Environment.IsDevelopment())
-    {
-        app.Logger.LogWarning(
-            "DEVELOPMENT RESET CODE for {Username}: {Code}",
-            user.Username,
-            code
-        );
-    }
-
-    return Results.Ok(new
-    {
-        message = genericMessage
-    });
-});
-
-        // PASSWORD RESET: COMPLETE
-app.MapPost("/api/password-reset/complete", async (
-    PasswordResetCompleteRequest request,
-    AppDbContext db,
-    IPasswordHasher<AppUser> hasher,
-    HttpContext context) =>
-{
-    if (string.IsNullOrWhiteSpace(request.Username) ||
-        string.IsNullOrWhiteSpace(request.Code) ||
-        string.IsNullOrWhiteSpace(request.NewPassword))
-    {
-        return Results.BadRequest(new
+        // PASSWORD RESET: COMPLETE USING A VERIFIED SCHOOL EMAIL
+        app.MapPost("/api/password-reset/complete", async (
+            PasswordResetCompleteRequest request,
+            AppDbContext db,
+            IPasswordHasher<AppUser> hasher,
+            HttpContext context) =>
         {
-            message = "Complete all fields."
-        });
-    }
+            if (!app.Environment.IsDevelopment())
+            {
+                return Results.Problem(
+                    "Password-reset email delivery is not configured. This development endpoint is disabled outside local development.",
+                    statusCode: StatusCodes.Status503ServiceUnavailable);
+            }
 
-    if (request.NewPassword.Length < 8 ||
-        request.NewPassword.Length > 128)
-    {
-        return Results.BadRequest(new
-        {
-            message = "Your new password must be between 8 and 128 characters."
-        });
-    }
+            var email = NormalizeSchoolEmail(request.Email);
+            if (email is null || string.IsNullOrWhiteSpace(request.Code) ||
+                string.IsNullOrWhiteSpace(request.NewPassword))
+            {
+                return Results.BadRequest(new { message = "Complete all fields using your verified school email." });
+            }
 
-    var username = request.Username.Trim();
+            if (request.NewPassword.Length < 8 || request.NewPassword.Length > 128)
+            {
+                return Results.BadRequest(new { message = "Your new password must be between 8 and 128 characters." });
+            }
 
-    var user = await db.Users.SingleOrDefaultAsync(
-        u => u.Username == username
-    );
+            var user = await db.Users.SingleOrDefaultAsync(u =>
+                u.Email != null && u.Email.ToLower() == email && u.EmailVerified);
 
-    if (user is null)
-    {
-        return Results.BadRequest(new
-        {
-            message = "Invalid or expired code. Request a new one."
-        });
-    }
+            if (user is null)
+                return Results.BadRequest(new { message = "Invalid or expired code. Request a new one." });
 
-    var now = DateTime.UtcNow;
+            var now = DateTime.UtcNow;
+            if (string.IsNullOrEmpty(user.PasswordResetCodeHash) ||
+                !user.PasswordResetCodeExpiresAt.HasValue ||
+                user.PasswordResetCodeExpiresAt.Value <= now ||
+                user.PasswordResetCodeAttempts >= 5)
+            {
+                user.PasswordResetCodeHash = null;
+                user.PasswordResetCodeExpiresAt = null;
+                user.PasswordResetCodeAttempts = 0;
+                await db.SaveChangesAsync();
+                return Results.BadRequest(new { message = "Invalid or expired code. Request a new one." });
+            }
 
-    if (string.IsNullOrEmpty(user.PasswordResetCodeHash) ||
-        !user.PasswordResetCodeExpiresAt.HasValue ||
-        user.PasswordResetCodeExpiresAt.Value <= now ||
-        user.PasswordResetCodeAttempts >= 5)
-    {
-        user.PasswordResetCodeHash = null;
-        user.PasswordResetCodeExpiresAt = null;
-        user.PasswordResetCodeAttempts = 0;
+            var verification = hasher.VerifyHashedPassword(
+                user,
+                user.PasswordResetCodeHash,
+                request.Code.Trim());
 
-        await db.SaveChangesAsync();
+            if (verification == PasswordVerificationResult.Failed)
+            {
+                user.PasswordResetCodeAttempts++;
+                if (user.PasswordResetCodeAttempts >= 5)
+                {
+                    user.PasswordResetCodeHash = null;
+                    user.PasswordResetCodeExpiresAt = null;
+                }
+                await db.SaveChangesAsync();
+                return Results.BadRequest(new { message = "Invalid or expired code. Check your code and try again." });
+            }
 
-        return Results.BadRequest(new
-        {
-            message = "Invalid or expired code. Request a new one."
-        });
-    }
-
-    var verification = hasher.VerifyHashedPassword(
-        user,
-        user.PasswordResetCodeHash,
-        request.Code.Trim()
-    );
-
-    if (verification == PasswordVerificationResult.Failed)
-    {
-        user.PasswordResetCodeAttempts++;
-
-        if (user.PasswordResetCodeAttempts >= 5)
-        {
+            user.PasswordHash = hasher.HashPassword(user, request.NewPassword);
             user.PasswordResetCodeHash = null;
             user.PasswordResetCodeExpiresAt = null;
-        }
+            user.PasswordResetCodeAttempts = 0;
+            user.PasswordResetRequestedAt = null;
+            await db.SaveChangesAsync();
 
-        await db.SaveChangesAsync();
+            await context.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
 
-        return Results.BadRequest(new
-        {
-            message = "Invalid or expired code. Check your code and try again."
+            return Results.Ok(new
+            {
+                message = "Your password has been changed successfully. You can now log in."
+            });
         });
-    }
 
-    // Save the new password using the existing password hasher.
-    user.PasswordHash = hasher.HashPassword(
-        user,
-        request.NewPassword
-    );
-
-    // Invalidate the code after successful use.
-    user.PasswordResetCodeHash = null;
-    user.PasswordResetCodeExpiresAt = null;
-    user.PasswordResetCodeAttempts = 0;
-    user.PasswordResetRequestedAt = null;
-
-    await db.SaveChangesAsync();
-
-    // Sign out the current browser session, if any.
-    await context.SignOutAsync(
-        CookieAuthenticationDefaults.AuthenticationScheme
-    );
-
-    return Results.Ok(new
-    {
-        message = "Your password has been changed successfully. You can now log in."
-    });
-});
         // CURRENT USER ENDPOINT
         // Accessible only to signed-in users.
         app.MapGet("/api/me", (HttpContext context) =>
@@ -844,6 +1049,28 @@ app.MapPost("/api/password-reset/complete", async (
         app.Run();
     }
 
+    private static string? NormalizeSchoolEmail(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return null;
+
+        var normalized = value.Trim().ToLowerInvariant();
+        try
+        {
+            var parsed = new MailAddress(normalized);
+            if (!string.Equals(parsed.Address, normalized, StringComparison.OrdinalIgnoreCase))
+                return null;
+        }
+        catch (FormatException)
+        {
+            return null;
+        }
+
+        return normalized.EndsWith("@lifeinstitute.edu.ph", StringComparison.OrdinalIgnoreCase)
+            ? normalized
+            : null;
+    }
+
     private static string? ValidateProduct(ProductRequest request)
     {
         if (string.IsNullOrWhiteSpace(request.Name) || request.Name.Trim().Length > 80)
@@ -919,15 +1146,18 @@ public record LoginRequest(
 
 public record RegisterRequest(
     string? Username,
-    string? Password
+    string? Password,
+    string? Email
 );
 
-public record PasswordResetRequest(
-    string? Username
-);
+public record EmailVerificationRequest(string? Email);
+
+public record EmailVerificationCompleteRequest(string? Code);
+
+public record PasswordResetRequest(string? Email);
 
 public record PasswordResetCompleteRequest(
-    string? Username,
+    string? Email,
     string? Code,
     string? NewPassword
 );
@@ -956,6 +1186,20 @@ public class AppUser
     public string PasswordHash { get; set; } = "";
 
     public string Role { get; set; } = "User";
+
+    public string? Email { get; set; }
+
+    public bool EmailVerified { get; set; } = false;
+
+    public string? PendingEmail { get; set; }
+
+    public string? EmailVerificationCodeHash { get; set; }
+
+    public DateTime? EmailVerificationCodeExpiresAt { get; set; }
+
+    public int EmailVerificationCodeAttempts { get; set; } = 0;
+
+    public DateTime? EmailVerificationRequestedAt { get; set; }
 
     public string? PasswordResetCodeHash { get; set; }
 
@@ -988,6 +1232,10 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<AppUser>()
             .HasIndex(user => user.Username)
             .IsUnique();
+        modelBuilder.Entity<AppUser>()
+            .HasIndex(user => user.Email)
+            .IsUnique()
+            .HasFilter("\"Email\" IS NOT NULL AND \"Email\" <> ''");
         modelBuilder.Entity<FoodOrder>()
             .HasMany(order => order.Items)
             .WithOne()
