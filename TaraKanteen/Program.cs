@@ -5,6 +5,7 @@ using System.Net.Mail;
 using Microsoft.AspNetCore.Authentication; 
 using Microsoft.AspNetCore.Authentication.Cookies; 
 using Microsoft.AspNetCore.Identity; 
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 
 public partial class Program
@@ -29,6 +30,12 @@ public partial class Program
             IPasswordHasher<AppUser>,
             PasswordHasher<AppUser>
         >();
+
+        // Google OAuth support for securely connecting the TaraKanteen sender Gmail.
+        builder.Services.AddHttpClient();
+        builder.Services.AddDataProtection()
+            .SetApplicationName("TaraKanteen");
+        builder.Services.AddSingleton<GoogleRefreshTokenStore>();
 
         // Register cookie authentication.
         builder.Services
@@ -255,6 +262,9 @@ public partial class Program
 
         app.UseAuthentication();
         app.UseAuthorization();
+
+        // Gmail sender-account authorization endpoints (development setup only).
+        app.MapGoogleGmailOAuth();
 
         // LOGIN ENDPOINT
         app.MapPost("/api/login", async (

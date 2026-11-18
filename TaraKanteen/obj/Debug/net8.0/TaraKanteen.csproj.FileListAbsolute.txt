@@ -68,3 +68,11 @@ C:\Users\LMI\Desktop\Grade 12\Sagittarius\hatdog\TaraKanteen\obj\Debug\net8.0\re
 C:\Users\LMI\Desktop\Grade 12\Sagittarius\hatdog\TaraKanteen\bin\Debug\net8.0\MailKit.dll
 C:\Users\LMI\Desktop\Grade 12\Sagittarius\hatdog\TaraKanteen\bin\Debug\net8.0\MimeKit.Core.dll
 C:\Users\LMI\Desktop\Grade 12\Sagittarius\hatdog\TaraKanteen\bin\Debug\net8.0\System.Formats.Asn1.dll
+C:\Users\LMI\Desktop\Grade 12\Sagittarius\hatdog\TaraKanteen\bin\Debug\net8.0\Google.Apis.dll
+C:\Users\LMI\Desktop\Grade 12\Sagittarius\hatdog\TaraKanteen\bin\Debug\net8.0\Google.Apis.Auth.dll
+C:\Users\LMI\Desktop\Grade 12\Sagittarius\hatdog\TaraKanteen\bin\Debug\net8.0\Google.Apis.Core.dll
+C:\Users\LMI\Desktop\Grade 12\Sagittarius\hatdog\TaraKanteen\bin\Debug\net8.0\Google.Apis.Gmail.v1.dll
+C:\Users\LMI\Desktop\Grade 12\Sagittarius\hatdog\TaraKanteen\bin\Debug\net8.0\Newtonsoft.Json.dll
+C:\Users\LMI\Desktop\Grade 12\Sagittarius\hatdog\TaraKanteen\bin\Debug\net8.0\System.CodeDom.dll
+C:\Users\LMI\Desktop\Grade 12\Sagittarius\hatdog\TaraKanteen\bin\Debug\net8.0\System.Management.dll
+C:\Users\LMI\Desktop\Grade 12\Sagittarius\hatdog\TaraKanteen\bin\Debug\net8.0\runtimes\win\lib\net7.0\System.Management.dll
