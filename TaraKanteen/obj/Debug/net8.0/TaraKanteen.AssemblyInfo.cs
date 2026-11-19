@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("TaraKanteen")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+754a0d1dd6e004880255536ae89b0ebec8063bd2")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+b9d9dcaa0ba2843832d730f3a95865978ef84e90")]
 [assembly: System.Reflection.AssemblyProductAttribute("TaraKanteen")]
 [assembly: System.Reflection.AssemblyTitleAttribute("TaraKanteen")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

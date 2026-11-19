@@ -114,8 +114,8 @@ public static class GoogleGmailOAuthExtensions
                     statusCode: StatusCodes.Status400BadRequest);
             }
 
-            var googleError = context.Request.Query["error"].ToString();
-            if (!string.IsNullOrWhiteSpace(googleError))
+           var authorizationError = context.Request.Query["error"].ToString();
+if (!string.IsNullOrWhiteSpace(authorizationError))
             {
                 return Results.Problem(
                     "Google authorization was cancelled or denied. You can close this page and try again.",
@@ -153,8 +153,44 @@ public static class GoogleGmailOAuthExtensions
 
             if (!tokenResponse.IsSuccessStatusCode)
             {
+                // Log only Google's safe error fields. Never log the authorization code,
+                // client secret, access token, refresh token, or the full response body.
+                var googleError = "unknown_error";
+                var googleErrorDescription = "No error description was returned.";
+
+                var errorBody = await tokenResponse.Content.ReadAsStringAsync();
+                try
+                {
+                    using var errorDocument = JsonDocument.Parse(errorBody);
+                    var errorRoot = errorDocument.RootElement;
+
+                    if (errorRoot.TryGetProperty("error", out var errorElement) &&
+                        errorElement.ValueKind == JsonValueKind.String)
+                    {
+                        googleError = errorElement.GetString() ?? googleError;
+                    }
+
+                    if (errorRoot.TryGetProperty("error_description", out var descriptionElement) &&
+                        descriptionElement.ValueKind == JsonValueKind.String)
+                    {
+                        googleErrorDescription = descriptionElement.GetString() ?? googleErrorDescription;
+                    }
+                }
+                catch (JsonException)
+                {
+                    // Keep the generic values if Google did not return JSON.
+                }
+
+                app.Logger.LogError(
+                    "Google OAuth token exchange failed. HTTP {StatusCode}; Google error {GoogleError}; description: {GoogleErrorDescription}",
+                    (int)tokenResponse.StatusCode,
+                    googleError,
+                    googleErrorDescription);
+
                 return Results.Problem(
-                    "Google did not accept the authorization code. Check that the Client ID, secret, and redirect URI match, then retry.",
+                    app.Environment.IsDevelopment()
+                        ? $"Google token exchange failed ({googleError}). Check the VS Code terminal for details, then start a fresh authorization attempt."
+                        : "Google authorization could not be completed. Please try again.",
                     statusCode: StatusCodes.Status502BadGateway);
             }
 
