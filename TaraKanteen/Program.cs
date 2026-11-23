@@ -36,6 +36,7 @@ public partial class Program
         builder.Services.AddDataProtection()
             .SetApplicationName("TaraKanteen");
         builder.Services.AddSingleton<GoogleRefreshTokenStore>();
+        builder.Services.AddTransient<GmailEmailSender>();
 
         // Register cookie authentication.
         builder.Services
@@ -267,34 +268,52 @@ public partial class Program
         app.MapGoogleGmailOAuth();
 
         // LOGIN ENDPOINT
+        // Students sign in with their school email. A PendingEmail is also
+        // accepted so newly registered students can sign in and complete
+        // the existing email-verification process.
+        // Administrators without a linked email may continue using their username.
         app.MapPost("/api/login", async (
             LoginRequest request,
             AppDbContext db,
             IPasswordHasher<AppUser> hasher,
             HttpContext context) =>
         {
-            if (string.IsNullOrWhiteSpace(request.Username) ||
+            if (string.IsNullOrWhiteSpace(request.Email) ||
                 string.IsNullOrWhiteSpace(request.Password))
             {
                 return Results.BadRequest(new
                 {
-                    message = "Enter your username and password."
+                    message = "Enter your school email address and password."
                 });
             }
 
-            var username = request.Username.Trim();
+            var loginValue = request.Email.Trim();
+            var email = NormalizeSchoolEmail(loginValue);
 
-            // Find the user in the Users table.
-            var user = await db.Users.SingleOrDefaultAsync(
-                u => u.Username == username
-            );
+            AppUser? user = null;
+
+            // First look for a student's verified email or pending email.
+            if (email is not null)
+            {
+                user = await db.Users.FirstOrDefaultAsync(u =>
+                    (u.Email != null && u.Email.ToLower() == email) ||
+                    (u.PendingEmail != null && u.PendingEmail.ToLower() == email));
+            }
+
+            // Keep existing administrator accounts working if they do not
+            // yet have an email address linked to their account.
+            if (user is null)
+            {
+                user = await db.Users.FirstOrDefaultAsync(u =>
+                    u.Role == "Admin" && u.Username == loginValue);
+            }
 
             if (user is null)
             {
                 return Results.Json(
                     new
                     {
-                        message = "Invalid username or password."
+                        message = "Invalid email address or password."
                     },
                     statusCode: 401
                 );
@@ -312,7 +331,7 @@ public partial class Program
                 return Results.Json(
                     new
                     {
-                        message = "Invalid username or password."
+                        message = "Invalid email address or password."
                     },
                     statusCode: 401
                 );
@@ -330,21 +349,22 @@ public partial class Program
                 await db.SaveChangesAsync();
             }
 
-            // Information stored in the authentication cookie.
+            // Keep the username as the signed-in identity for existing
+            // dashboards, order history, and student-facing displays.
             var claims = new[]
             {
-        new Claim(
-            ClaimTypes.NameIdentifier,
-            user.Id.ToString()
-        ),
-        new Claim(
-            ClaimTypes.Name,
-            user.Username
-        ),
-        new Claim(
-            ClaimTypes.Role,
-            user.Role
-        )
+                new Claim(
+                    ClaimTypes.NameIdentifier,
+                    user.Id.ToString()
+                ),
+                new Claim(
+                    ClaimTypes.Name,
+                    user.Username
+                ),
+                new Claim(
+                    ClaimTypes.Role,
+                    user.Role
+                )
             };
 
             var identity = new ClaimsIdentity(
@@ -488,22 +508,15 @@ public partial class Program
             });
         }).RequireAuthorization();
 
-        // EMAIL: REQUEST A VERIFICATION CODE
+        // EMAIL: SEND A VERIFICATION CODE TO THE PENDING SCHOOL EMAIL
         // Existing accounts use this after signing in to attach a school email.
-        // This stage is development-only: the code is logged to the server terminal.
         app.MapPost("/api/account/email/request-verification", async (
             EmailVerificationRequest request,
             AppDbContext db,
             IPasswordHasher<AppUser> hasher,
+            GmailEmailSender emailSender,
             HttpContext context) =>
         {
-            if (!app.Environment.IsDevelopment())
-            {
-                return Results.Problem(
-                    "Email delivery is not configured. Email verification is available only in local development for now.",
-                    statusCode: StatusCodes.Status503ServiceUnavailable);
-            }
-
             var email = NormalizeSchoolEmail(request.Email);
             if (email is null)
             {
@@ -560,15 +573,30 @@ public partial class Program
 
             await db.SaveChangesAsync();
 
-            app.Logger.LogWarning(
-                "DEVELOPMENT EMAIL VERIFICATION CODE for {Username} ({Email}): {Code}",
-                user.Username,
-                email,
-                code);
+            try
+            {
+                await emailSender.SendAsync(
+                    email,
+                    "TaraKanteen email verification code",
+                    $"Hello {user.Username},\r\n\r\nYour TaraKanteen email verification code is: {code}\r\n\r\nThis code expires in 10 minutes. You can request a new code after one minute.\r\n\r\nIf you did not request this code, you can ignore this email.");
+            }
+            catch (Exception ex)
+            {
+                user.EmailVerificationCodeHash = null;
+                user.EmailVerificationCodeExpiresAt = null;
+                user.EmailVerificationCodeAttempts = 0;
+                user.EmailVerificationRequestedAt = null;
+                await db.SaveChangesAsync();
+
+                app.Logger.LogError(ex, "Failed to send a TaraKanteen email verification message.");
+                return Results.Problem(
+                    "The verification email could not be sent right now. Please try again later.",
+                    statusCode: StatusCodes.Status503ServiceUnavailable);
+            }
 
             return Results.Ok(new
             {
-                message = "A verification code was generated. In local development, check the VS Code terminal. The code expires in 10 minutes."
+                message = "A verification code has been sent to your email address. It expires in 10 minutes."
             });
         }).RequireAuthorization();
 
@@ -579,13 +607,6 @@ public partial class Program
             IPasswordHasher<AppUser> hasher,
             HttpContext context) =>
         {
-            if (!app.Environment.IsDevelopment())
-            {
-                return Results.Problem(
-                    "Email delivery is not configured. Email verification is available only in local development for now.",
-                    statusCode: StatusCodes.Status503ServiceUnavailable);
-            }
-
             if (string.IsNullOrWhiteSpace(request.Code) || request.Code.Trim().Length != 6 ||
                 !request.Code.Trim().All(char.IsDigit))
             {
@@ -661,23 +682,16 @@ public partial class Program
             });
         }).RequireAuthorization();
 
-        // PASSWORD RESET: REQUEST A CODE USING A VERIFIED SCHOOL EMAIL
-        // In local development, the code is printed to the VS Code terminal.
+        // PASSWORD RESET: SEND A CODE TO THE VERIFIED SCHOOL EMAIL
         app.MapPost("/api/password-reset/request", async (
             PasswordResetRequest request,
             AppDbContext db,
-            IPasswordHasher<AppUser> hasher) =>
+            IPasswordHasher<AppUser> hasher,
+            GmailEmailSender emailSender) =>
         {
-            if (!app.Environment.IsDevelopment())
-            {
-                return Results.Problem(
-                    "Password-reset email delivery is not configured. This development endpoint is disabled outside local development.",
-                    statusCode: StatusCodes.Status503ServiceUnavailable);
-            }
-
             var email = NormalizeSchoolEmail(request.Email);
             const string genericMessage =
-                "If a verified account matches that school email, a reset code has been generated. Check the server terminal in development mode.";
+                "If a verified account matches that school email, a reset code will be sent. Check the inbox for that address.";
 
             if (email is null)
                 return Results.Ok(new { message = genericMessage });
@@ -703,11 +717,25 @@ public partial class Program
             user.PasswordResetRequestedAt = now;
             await db.SaveChangesAsync();
 
-            app.Logger.LogWarning(
-                "DEVELOPMENT PASSWORD RESET CODE for {Username} ({Email}): {Code}",
-                user.Username,
-                email,
-                code);
+            try
+            {
+                await emailSender.SendAsync(
+                    email,
+                    "TaraKanteen password reset code",
+                    $"Hello {user.Username},\r\n\r\nYour TaraKanteen password reset code is: {code}\r\n\r\nThis code expires in 10 minutes. If you did not request a password reset, you can ignore this email.");
+            }
+            catch (Exception ex)
+            {
+                user.PasswordResetCodeHash = null;
+                user.PasswordResetCodeExpiresAt = null;
+                user.PasswordResetCodeAttempts = 0;
+                user.PasswordResetRequestedAt = null;
+                await db.SaveChangesAsync();
+
+                app.Logger.LogError(ex, "Failed to send a TaraKanteen password reset message.");
+                // Keep the same public response so the endpoint does not reveal whether
+                // an email address belongs to a registered account.
+            }
 
             return Results.Ok(new { message = genericMessage });
         });
@@ -719,13 +747,6 @@ public partial class Program
             IPasswordHasher<AppUser> hasher,
             HttpContext context) =>
         {
-            if (!app.Environment.IsDevelopment())
-            {
-                return Results.Problem(
-                    "Password-reset email delivery is not configured. This development endpoint is disabled outside local development.",
-                    statusCode: StatusCodes.Status503ServiceUnavailable);
-            }
-
             var email = NormalizeSchoolEmail(request.Email);
             if (email is null || string.IsNullOrWhiteSpace(request.Code) ||
                 string.IsNullOrWhiteSpace(request.NewPassword))
@@ -1148,9 +1169,11 @@ private static async Task EnsureSqliteColumnAsync(
 
 }
 
-// Defines the login data received from JavaScript.
+// Defines the email/password data received from the login page.
+// The Email field may contain an administrator username only for
+// legacy administrator accounts without a linked email address.
 public record LoginRequest(
-    string? Username,
+    string? Email,
     string? Password
 );
 

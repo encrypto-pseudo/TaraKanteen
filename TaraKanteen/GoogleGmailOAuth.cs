@@ -126,6 +126,22 @@ if (!string.IsNullOrWhiteSpace(authorizationError))
             var clientId = configuration["GoogleOAuth:ClientId"];
             var clientSecret = configuration["GoogleOAuth:ClientSecret"];
             var redirectUri = configuration["GoogleOAuth:RedirectUri"];
+            var configRoot = (IConfigurationRoot)configuration;
+
+var secretProvider = configRoot.Providers
+    .Where(p => p.TryGet("GoogleOAuth:ClientSecret", out _))
+    .Select(p => p.GetType().Name)
+    .LastOrDefault() ?? "none";
+
+app.Logger.LogInformation(
+    "OAuth config check: ClientIdPresent={ClientIdPresent}; SecretPresent={SecretPresent}; SecretPrefixValid={SecretPrefixValid}; SecretLength={SecretLength}; SecretHasWhitespace={SecretHasWhitespace}; SecretProvider={SecretProvider}",
+    !string.IsNullOrWhiteSpace(clientId),
+    !string.IsNullOrWhiteSpace(clientSecret),
+    clientSecret?.StartsWith("GOCSPX-", StringComparison.Ordinal) == true,
+    clientSecret?.Length ?? 0,
+    clientSecret?.Any(char.IsWhiteSpace) == true,
+    secretProvider
+);
 
             if (string.IsNullOrWhiteSpace(code) ||
                 string.IsNullOrWhiteSpace(clientId) ||

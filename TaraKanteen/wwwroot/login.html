@@ -30,12 +30,12 @@
       <section class="auth-form-panel" aria-labelledby="loginHeading">
         <div class="auth-form-content">
           <h2 id="loginHeading">Welcome back</h2>
-          <p class="auth-intro">Log in with your username to continue to your account.</p>
+          <p class="auth-intro">Students: log in with your school email address. Administrators without a linked email can continue using their admin username.</p>
 
           <form id="loginForm">
-            <label class="auth-field" for="username">
-              <span>Username</span>
-              <input class="auth-input" id="username" name="username" type="text" placeholder="Your username" autocomplete="username" required>
+            <label class="auth-field" for="email">
+              <span>Email address</span>
+              <input class="auth-input" id="email" name="email" type="text" inputmode="email" placeholder="you@lifeinstitute.edu.ph" autocomplete="email" autocapitalize="none" spellcheck="false" required>
             </label>
 
             <label class="auth-field" for="password">
@@ -63,7 +63,7 @@
   <footer class="auth-footer">Good food. More school day. © <span id="year"></span></footer>
 
   <script>
-    const usernameInput = document.querySelector("#username");
+    const emailInput = document.querySelector("#email");
     const passwordInput = document.querySelector("#password");
     const togglePassword = document.querySelector("#togglePassword");
     const loginForm = document.querySelector("#loginForm");
@@ -86,7 +86,7 @@
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            username: usernameInput.value,
+            email: emailInput.value.trim(),
             password: passwordInput.value
           })
         });
