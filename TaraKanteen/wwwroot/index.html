@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#74131D">
+  <meta name="description" content="Order your favorite school-day meals with TaraKanteen, the LIFE Institute Mariveles canteen ordering platform.">
+  <title>TaraKanteen — Good food. More school day.</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="announcement">LIFE Institute Mariveles <strong>· Your campus canteen, made easy</strong></div>
+  <header>
+    <nav class="nav shell" aria-label="Main navigation">
+      <a class="brand" href="index.html" aria-label="TaraKanteen home"><span class="brand-mark"><img class="brand-logo" src="images/logo.jpg" alt=""></span> taraKanteen</a>
+      <div class="nav-links">
+        <a href="#menu">Our menu</a>
+        <a href="#how-it-works">How it works</a>
+        <a href="#about">About us</a>
+      </div>
+      <div class="nav-actions">
+        <a class="login" href="login.html">Log in</a>
+        <a class="signup-link" href="register.html">Sign up</a>
+        <a class="cart-button" href="tray.html" data-cart-button aria-label="Your tray, 0 items">Your tray <span data-cart-count>0</span></a>
+      </div>
+    </nav>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="hero-grid shell">
+        <div>
+          <p class="eyebrow">Made for LIFE Institute students</p>
+          <h1>Good food.<br>More <em>school day.</em></h1>
+          <p class="hero-copy">Make every break a little better. Find a campus favorite, order ahead, and let the canteen take care of the rest.</p>
+          <div class="hero-actions">
+            <a class="primary-link" href="#menu">Explore the menu <span aria-hidden="true">↗</span></a>
+            <a class="hero-login-link" href="login.html">Student log in</a>
+          </div>
+          <p class="small-note">A school canteen ordering experience by TaraKanteen.</p>
+        </div>
+        <div class="hero-art" aria-label="School-day meal illustration">
+          <div class="art-circle"></div>
+          <div class="food-bowl" aria-hidden="true">🍛</div>
+          <div class="floating-note note-one"><strong>School-day favorites</strong><small>Good things, close to class</small></div>
+          <div class="floating-note note-two"><span class="note-icon">🥡</span><strong>Easy pickup</strong><small>Order in a few taps</small></div>
+          <span class="spark spark-one" aria-hidden="true">✦</span>
+          <span class="spark spark-two" aria-hidden="true">✳</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="trust-strip" aria-label="TaraKanteen benefits">
+      <div class="trust-inner shell">
+        <div class="trust-item"><span class="trust-icon" aria-hidden="true">🍽️</span>Campus-made favorites</div>
+        <div class="trust-item"><span class="trust-icon" aria-hidden="true">₱</span>Clear, student-friendly prices</div>
+        <div class="trust-item"><span class="trust-icon" aria-hidden="true">⏱️</span>Simple order-ahead pickup</div>
+        <div class="trust-item"><span class="trust-icon" aria-hidden="true">🏫</span>For the LIFE community</div>
+      </div>
+    </section>
+
+    <section class="menu-section shell" id="menu">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">A little something for everyone</p>
+          <h2>Today’s campus favorites</h2>
+          <p>Browse the menu and add your picks to your tray.</p>
+        </div>
+        <div class="menu-tools">
+          <label class="search-wrap"><span aria-hidden="true">⌕</span><input class="search" id="menuSearch" type="search" placeholder="Find a favorite" aria-label="Search the menu"></label>
+        </div>
+      </div>
+      <div class="categories" role="group" aria-label="Filter menu by category">
+        <button class="category active" type="button" data-category="all" aria-pressed="true">Everything</button>
+        <button class="category" type="button" data-category="meals" aria-pressed="false">Meals</button>
+        <button class="category" type="button" data-category="snacks" aria-pressed="false">Snacks</button>
+        <button class="category" type="button" data-category="drinks" aria-pressed="false">Drinks</button>
+      </div>
+      <div class="menu-grid" id="menuProducts" aria-live="polite"></div>
+      <p class="menu-disclaimer">Prices are shown in Philippine pesos. Availability may vary during the school day.</p>
+    </section>
+
+    <section class="how-section" id="how-it-works">
+      <div class="shell">
+        <div class="how-heading">
+          <p class="eyebrow">Your next break, sorted</p>
+          <h2>Good food is just a few taps away.</h2>
+        </div>
+        <div class="steps">
+          <article class="step"><span class="step-number">01</span><h3>Pick your favorites</h3><p>Explore meals, snacks, and drinks available from your school canteen.</p></article>
+          <article class="step"><span class="step-number">02</span><h3>Build your tray</h3><p>Add what you like and check your order details before you go.</p></article>
+          <article class="step"><span class="step-number">03</span><h3>Order and enjoy</h3><p>Log in to place your order and coordinate pickup with the canteen.</p></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="cta shell" id="about">
+      <div class="cta-card">
+        <div class="cta-copy">
+          <p class="eyebrow">A canteen made for campus life</p>
+          <h2>Your school day deserves a delicious little pause.</h2>
+          <p>TaraKanteen brings the LIFE Institute Mariveles community closer to its campus favorites.</p>
+        </div>
+        <a class="primary-link" href="register.html">Join TaraKanteen <span aria-hidden="true">↗</span></a>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="footer-inner shell">
+      <a class="brand" href="index.html">taraKanteen</a>
+      <span>Good food. More school day. © <span id="year"></span></span>
+      <div class="footer-links"><a href="#about">About</a><a href="mailto:hello@tarakanteen.school">Contact</a></div>
+    </div>
+  </footer>
+
+  <div class="toast" id="cartToast" role="status" aria-live="polite"></div>
+  <script src="cart.js"></script>
+  <script>
+    const menuGrid = document.querySelector("#menuProducts");
+    const menuSearch = document.querySelector("#menuSearch");
+    const categoryButtons = [...document.querySelectorAll("[data-category]")];
+    const cartToast = document.querySelector("#cartToast");
+    let activeCategory = "all";
+    let toastTimer;
+
+    function renderMenu() {
+      const query = menuSearch.value.trim().toLowerCase();
+      const products = window.TaraKanteen.products.filter(product =>
+        (activeCategory === "all" || product.category === activeCategory) &&
+        `${product.name} ${product.description} ${product.category}`.toLowerCase().includes(query)
+      );
+      menuGrid.innerHTML = products.length ? products.map(product => `
+        <article class="menu-card">
+          <div class="product-art ${product.art}">
+            <span class="badge">${product.badge}</span>
+            <span aria-hidden="true">${product.icon}</span>
+          </div>
+          <div class="product-info">
+            <div class="product-top"><h3>${product.name}</h3><span class="rating">${product.rating}</span></div>
+            <p>${product.description}</p>
+            <div class="product-bottom"><span class="price">₱${product.price.toFixed(2)}</span><button class="add-button" type="button" data-add-product="${product.id}" aria-label="Add ${product.name} to your tray">+</button></div>
+          </div>
+        </article>
+      `).join("") : '<p class="empty-state">No menu items match your search.</p>';
+    }
+
+    categoryButtons.forEach(button => button.addEventListener("click", () => {
+      activeCategory = button.dataset.category;
+      categoryButtons.forEach(category => {
+        const selected = category === button;
+        category.classList.toggle("active", selected);
+        category.setAttribute("aria-pressed", String(selected));
+      });
+      renderMenu();
+    }));
+
+    menuSearch.addEventListener("input", renderMenu);
+    menuGrid.addEventListener("click", event => {
+      const button = event.target.closest("[data-add-product]");
+      if (!button) return;
+      window.TaraKanteen.cart.add(button.dataset.addProduct);
+      cartToast.textContent = "Added to your tray.";
+      cartToast.classList.add("show");
+      window.clearTimeout(toastTimer);
+      toastTimer = window.setTimeout(() => cartToast.classList.remove("show"), 2200);
+    });
+
+    document.querySelector("#year").textContent = String(new Date().getFullYear());
+    renderMenu();
+  </script>
+</body>
+</html>

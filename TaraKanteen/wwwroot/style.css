@@ -1,12 +1,12 @@
 :root {
       color-scheme: light;
-      --ink: #19352b;
-      --muted: #718078;
-      --green: #35574a;
-      --lime: #c8e878;
-      --cream: #f8f7f1;
-      --line: #e8e9df;
-      --orange: #ed8958;
+      --ink: #292426;
+      --muted: #777174;
+      --green: #9e1b27;
+      --lime: #f3e8e8;
+      --cream: #faf8f7;
+      --line: #e8e3e2;
+      --orange: #9e1b27;
       --white: #fff;
       font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     }
@@ -454,4 +454,116 @@
     }
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; }
+    }
+
+    :root {
+      --maroon: #9e1b27;
+      --maroon-dark: #74131d;
+      --blush: #f3e8e8;
+      --soft-gray: #e8e3e2;
+    }
+
+    body { background: var(--cream); color: var(--ink); }
+    header { border-color: var(--line); }
+    .brand { color: var(--ink); }
+    .brand-mark { width: 44px; height: 44px; flex: 0 0 44px; overflow: hidden; border: 1px solid var(--line); border-radius: 50%; background: #fff; }
+    .brand-logo { display: block; width: 100%; max-width: 100%; height: 100%; max-height: 100%; object-fit: contain; }
+    .announcement { background: var(--maroon-dark); color: #fff; }
+    .announcement strong { color: #f5dfe0; }
+    .nav-links, .login, .auth-home-link, .tray-back-link { color: var(--muted); }
+    .nav-links a:hover, .login:hover, .auth-home-link:hover, .tray-back-link:hover { color: var(--maroon); }
+    .signup-link, .cart-button, .primary-link, .add-button, .auth-submit, .dashboard-primary,
+    .toast, .table-action { background: var(--maroon); color: #fff; }
+    .signup-link:hover, .primary-link:hover, .auth-submit:hover,
+    .dashboard-primary:hover:not(:disabled), .table-action:hover,
+    .add-button:hover { background: var(--maroon-dark); }
+    .cart-button span, .primary-link span { color: #f5dfe0; }
+    .eyebrow, h1 em, .tray-heading h1 span, .dashboard-welcome h1 span { color: var(--maroon); }
+    .eyebrow::before { background: var(--maroon); }
+    .hero-copy, .section-heading p, .small-note, .product-info p,
+    .step p, .footer-inner, .tray-item-count, .summary-note,
+    .auth-intro, .auth-switch, .dashboard-welcome p:not(.eyebrow) { color: var(--muted); }
+    .search-wrap span { color: var(--muted); }
+    .art-circle, .trust-icon, .tray-heading-icon, .tray-empty-icon,
+    .role-badge, .status-pill, .order-bag { background: var(--blush); }
+    .trust-item, .role-badge, .status-pill, .auth-help-link, .auth-switch a,
+    .text-button, .auth-password-toggle, .dashboard-secondary { color: var(--maroon-dark); }
+    .trust-strip, .tray-items, .tray-summary, .tray-empty, .auth-layout,
+    .metric-card, .dashboard-panel, .student-order-panel, .student-product-card,
+    .menu-card, .step { border-color: var(--line); }
+    .search, .auth-input, .dashboard-field input, .dashboard-field select, .status-select,
+    .category, .quantity-control { border-color: var(--line); color: var(--ink); }
+    .search:focus, .auth-input:focus, .dashboard-field input:focus,
+    .dashboard-field select:focus, .status-select:focus {
+      border-color: var(--maroon);
+      box-shadow: 0 0 0 3px rgba(158, 27, 39, .12);
+    }
+    .category { color: var(--muted); }
+    .category.active, .category:hover, .quantity-control button,
+    .cart-quantity button, .table-action { border-color: var(--maroon); }
+    .category.active, .category:hover { background: var(--maroon); color: #fff; }
+    .quantity-control button, .cart-quantity button { background: var(--blush); color: var(--maroon-dark); }
+    .quantity-control button:hover, .cart-quantity button:hover { background: #ead4d5; }
+    .how-section { background: #f3e8e8; }
+    .step-number { background: var(--maroon); color: #fff; }
+    .cta-card { background: var(--maroon-dark); }
+    .cta-copy .eyebrow { color: #f5dfe0; }
+    .cta-copy p { color: #f0d8da; }
+    .cta-card .primary-link { background: #fff; color: var(--maroon-dark); }
+    .cta-card .primary-link span { color: var(--maroon); }
+    .art-pasta, .trust-icon, .student-product-card:nth-child(4n + 3) .student-product-icon,
+    .status-completed { background: #f3e8e8; }
+    .badge, .product-category { color: var(--maroon-dark); }
+    .student-product-card:nth-child(4n + 2) .student-product-icon,
+    .student-product-card:nth-child(4n) .student-product-icon { background: #f7f1f0; }
+    .auth-header, .dashboard-header { border-color: var(--line); }
+    .auth-story { background: var(--maroon-dark); }
+    .auth-story-copy .eyebrow, .auth-story-copy h1 em { color: #f6dfe0; }
+    .auth-story-copy p { color: #f2e3e3; }
+    .auth-food { border-color: #fff; }
+    .auth-field > span, .dashboard-field span { color: var(--ink); }
+    .auth-password-toggle:hover, .auth-help-link:hover, .auth-switch a:hover { color: var(--maroon); }
+    .auth-remember input, .dashboard-checkbox input { accent-color: var(--maroon); }
+    .auth-notice { color: var(--maroon-dark); }
+    .auth-notice.success, .dashboard-alert.success { color: #38644a; }
+    .dashboard-page { background: var(--cream); }
+    .dashboard-header { background: var(--maroon-dark); }
+    .dashboard-header .brand, .dashboard-header .dashboard-user { color: #fff; }
+    .dashboard-header .brand-mark { border-color: rgba(255,255,255,.35); }
+    .dashboard-header .role-badge { background: rgba(255,255,255,.16); color: #fff; }
+    .dashboard-header .text-button { color: #fff; }
+    .dashboard-alert, .stock-low, .metric-warning strong { color: var(--maroon); }
+    .metric-label, .panel-caption, .dashboard-date, .dashboard-table td { color: var(--muted); }
+    .metric-foot, .stock-note, .order-help { color: #777174; }
+    .dashboard-secondary:hover:not(:disabled) { background: var(--blush); }
+    .dashboard-table th { background: #faf8f7; color: var(--muted); }
+    .dashboard-table td, .table-wrap { border-color: var(--line); }
+    .dashboard-table tbody tr:hover { background: #fcf9f8; }
+    .dashboard-table .table-product-icon { background: var(--blush); }
+    .status-unavailable, .status-cancelled { background: #f6e5e2; color: var(--maroon-dark); }
+    .status-ready { background: #f3e8e8; color: var(--maroon-dark); }
+    .table-action:hover { background: var(--maroon-dark); }
+    .footer-inner .brand { color: var(--ink); }
+    .auth-footer { color: var(--muted); }
+    .menu-card:hover { box-shadow: 0 14px 35px rgba(70, 24, 29, .09); }
+    .floating-note, .menu-card, .student-product-card, .metric-card, .dashboard-panel,
+    .student-order-panel, .tray-items, .tray-summary, .auth-layout { box-shadow: 0 8px 26px rgba(64, 32, 35, .045); }
+    :focus-visible { outline: 3px solid rgba(158, 27, 39, .45); outline-offset: 3px; }
+
+    .school-brand { display: inline-flex; align-items: center; gap: 9px; color: var(--maroon-dark); font-size: 10px; font-weight: 750; letter-spacing: .04em; }
+    .school-brand img { width: 28px; height: 28px; object-fit: contain; }
+    .footer-inner .school-brand { margin-left: auto; }
+    .auth-footer { display: flex; align-items: center; justify-content: center; gap: 10px; }
+    .auth-footer .school-brand { font-size: 9px; }
+    .auth-footer .school-brand img { width: 25px; height: 25px; }
+    .menu-disclaimer { margin: 20px 0 0; color: var(--muted); font-size: 11px; }
+    .status-completed { color: #385b45; }
+    .art-milk { background: #f3e8e8; }
+    .stock-low { color: var(--maroon-dark); }
+
+    @media (max-width: 620px) {
+      .footer-inner .school-brand { margin-left: 0; }
+      .auth-footer { flex-wrap: wrap; }
+      .nav { height: auto; min-height: 67px; flex-wrap: wrap; gap: 8px; padding: 10px 0; }
+      .nav-actions { flex: 1 1 100%; justify-content: flex-start; }
     }
