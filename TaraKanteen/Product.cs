@@ -1,3 +1,4 @@
+
 public class Product
 {
     public int Id { get; set; }
@@ -11,6 +12,8 @@ public class Product
     public string Category { get; set; } = "";
 
     public string Icon { get; set; } = "";
+
+    public string? ImageUrl { get; set; }
 
     public int Stock { get; set; }
 

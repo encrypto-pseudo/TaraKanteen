@@ -997,6 +997,106 @@ public partial class Program
         })
             .RequireAuthorization("AdminOnly");
 
+            // ADMIN: UPLOAD OR REPLACE A PRODUCT IMAGE
+app.MapPost("/api/admin/products/{id:int}/image", async (
+    int id,
+    HttpRequest request,
+    AppDbContext db,
+    IWebHostEnvironment environment) =>
+{
+    // Find the product.
+    var product = await db.Products.FindAsync(id);
+
+    if (product is null)
+        return Results.NotFound(new { message = "Product not found." });
+
+    // Make sure the request contains a file.
+    if (!request.HasFormContentType)
+        return Results.BadRequest(new { message = "Please select an image." });
+
+    var form = await request.ReadFormAsync();
+    var image = form.Files.GetFile("image");
+
+    if (image is null || image.Length == 0)
+        return Results.BadRequest(new { message = "Please select an image." });
+
+    // Limit uploaded images to 5 MB.
+    const long maxImageSize = 5 * 1024 * 1024;
+
+    if (image.Length > maxImageSize)
+        return Results.BadRequest(new { message = "Image size must not exceed 5 MB." });
+
+    // Read the image and inspect its file signature.
+    await using var memoryStream = new MemoryStream();
+    await image.CopyToAsync(memoryStream);
+
+    var imageBytes = memoryStream.ToArray();
+    var extension = DetectImageExtension(imageBytes);
+
+    if (extension is null)
+        return Results.BadRequest(new
+        {
+            message = "Invalid image. Please upload a valid JPG, PNG, or WebP file."
+        });
+
+    // Create the uploads folder if it does not exist.
+    var webRoot = environment.WebRootPath ??
+        Path.Combine(environment.ContentRootPath, "wwwroot");
+
+    var uploadDirectory = Path.Combine(
+        webRoot,
+        "uploads",
+        "products"
+    );
+
+    Directory.CreateDirectory(uploadDirectory);
+
+    // Generate a unique filename.
+    var fileName = $"{Guid.NewGuid():N}{extension}";
+    var filePath = Path.Combine(uploadDirectory, fileName);
+
+    await File.WriteAllBytesAsync(filePath, imageBytes);
+
+    // Remember the previous image.
+    var oldImageUrl = product.ImageUrl;
+
+    // Save the new image path.
+    product.ImageUrl = $"/uploads/products/{fileName}";
+
+    try
+    {
+        await db.SaveChangesAsync();
+    }
+    catch
+    {
+        // Remove the newly uploaded file if saving to SQLite fails.
+        if (File.Exists(filePath))
+            File.Delete(filePath);
+
+        throw;
+    }
+
+    // Remove the previous image if it was stored in our product uploads folder.
+    if (!string.IsNullOrWhiteSpace(oldImageUrl) &&
+        oldImageUrl.StartsWith(
+            "/uploads/products/",
+            StringComparison.OrdinalIgnoreCase))
+    {
+        var oldFileName = Path.GetFileName(oldImageUrl);
+        var oldFilePath = Path.Combine(uploadDirectory, oldFileName);
+
+        if (File.Exists(oldFilePath))
+            File.Delete(oldFilePath);
+    }
+
+    return Results.Ok(new
+    {
+        message = "Product image uploaded successfully.",
+        imageUrl = product.ImageUrl
+    });
+
+}).RequireAuthorization("AdminOnly");
+
         app.MapPost("/api/admin/orders", async (
             AdminOrderRequest request,
             HttpContext context,
@@ -1130,6 +1230,48 @@ public partial class Program
         product.IsAvailable = request.IsAvailable;
     }
 
+    // Detect image formats using their file signatures.
+private static string? DetectImageExtension(byte[] bytes)
+{
+    // JPEG
+    if (bytes.Length >= 3 &&
+        bytes[0] == 0xFF &&
+        bytes[1] == 0xD8 &&
+        bytes[2] == 0xFF)
+    {
+        return ".jpg";
+    }
+
+    // PNG
+    if (bytes.Length >= 8 &&
+        bytes[0] == 0x89 &&
+        bytes[1] == 0x50 &&
+        bytes[2] == 0x4E &&
+        bytes[3] == 0x47 &&
+        bytes[4] == 0x0D &&
+        bytes[5] == 0x0A &&
+        bytes[6] == 0x1A &&
+        bytes[7] == 0x0A)
+    {
+        return ".png";
+    }
+
+    // WebP
+    if (bytes.Length >= 12 &&
+        bytes[0] == 0x52 &&
+        bytes[1] == 0x49 &&
+        bytes[2] == 0x46 &&
+        bytes[3] == 0x46 &&
+        bytes[8] == 0x57 &&
+        bytes[9] == 0x45 &&
+        bytes[10] == 0x42 &&
+        bytes[11] == 0x50)
+    {
+        return ".webp";
+    }
+
+    return null;
+}
 // Adds a SQLite column only when that column is not already present.
 private static async Task EnsureSqliteColumnAsync(
     DbConnection connection,

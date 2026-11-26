@@ -5,24 +5,49 @@
   const escapeHtml = value => String(value).replace(/[&<>"']/g, character => ({
     "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
   })[character]);
+  function safeProductImageUrl(product) {
+  const url = product.imageUrl;
 
-  async function api(url, options = {}) {
-    const response = await fetch(url, {
-      ...options,
-      headers: { ...(options.body ? { "Content-Type": "application/json" } : {}), ...options.headers }
-    });
-    const result = response.status === 204 || !response.headers.get("content-type")?.includes("application/json")
+  if (
+    typeof url === "string" &&
+    url.startsWith("/uploads/products/")
+  ) {
+    return escapeHtml(url);
+  }
+
+  return null;
+}
+
+ async function api(url, options = {}) {
+  const isFormData = options.body instanceof FormData;
+
+  const response = await fetch(url, {
+    ...options,
+    headers: {
+      ...(!isFormData && options.body
+        ? { "Content-Type": "application/json" }
+        : {}),
+      ...options.headers
+    }
+  });
+
+  const result =
+    response.status === 204 ||
+    !response.headers.get("content-type")?.includes("application/json")
       ? null
       : await response.json();
-    if (!response.ok) {
-      if (response.status === 401) {
-        window.location.href = "login.html";
-        throw new Error("Please log in to continue.");
-      }
-      throw new Error(result?.message || "The request could not be completed.");
+
+  if (!response.ok) {
+    if (response.status === 401) {
+      window.location.href = "login.html";
+      throw new Error("Please log in to continue.");
     }
-    return result;
+
+    throw new Error(result?.message || "The request could not be completed.");
   }
+
+  return result;
+}
 
   function showNotice(message, success = false) {
     notice.textContent = message;
@@ -67,10 +92,82 @@
     const editCancel = document.querySelector("#cancelEditButton");
     let dashboardData;
 
+    const imageInput = document.querySelector("#productImage");
+const imagePreviewContainer =
+  document.querySelector("#productImagePreviewContainer");
+const imagePreview =
+  document.querySelector("#productImagePreview");
+
+let previewObjectUrl = null;
+
+function clearImagePreview() {
+  if (previewObjectUrl) {
+    URL.revokeObjectURL(previewObjectUrl);
+    previewObjectUrl = null;
+  }
+
+  imagePreview.removeAttribute("src");
+  imagePreviewContainer.hidden = true;
+}
+
+function showImagePreview(source, isTemporary = false) {
+  clearImagePreview();
+
+  imagePreview.src = source;
+  imagePreviewContainer.hidden = false;
+
+  if (isTemporary) {
+    previewObjectUrl = source;
+  }
+}
+
+imageInput.addEventListener("change", () => {
+  const file = imageInput.files?.[0];
+
+  if (!file) {
+    clearImagePreview();
+    return;
+  }
+
+  const allowedTypes = [
+    "image/jpeg",
+    "image/png",
+    "image/webp"
+  ];
+
+  if (!allowedTypes.includes(file.type)) {
+    imageInput.value = "";
+    clearImagePreview();
+    showNotice("Please select a JPG, PNG, or WebP image.");
+    return;
+  }
+
+  if (file.size > 5 * 1024 * 1024) {
+    imageInput.value = "";
+    clearImagePreview();
+    showNotice("Image size must not exceed 5 MB.");
+    return;
+  }
+
+  const imageUrl = URL.createObjectURL(file);
+  showImagePreview(imageUrl, true);
+});
+
     function renderProducts(products) {
       productsTable.innerHTML = products.length ? products.map(product => `
         <tr>
-          <td><span class="table-product-icon">${escapeHtml(product.icon)}</span><strong>${escapeHtml(product.name)}</strong></td>
+         <td>
+  ${
+    safeProductImageUrl(product)
+      ? `<img
+          src="${safeProductImageUrl(product)}"
+          alt=""
+          loading="lazy"
+          style="width:45px;height:45px;object-fit:cover;border-radius:10px;vertical-align:middle;margin-right:8px;">`
+      : `<span class="table-product-icon">${escapeHtml(product.icon || "🍽️")}</span>`
+  }
+  <strong>${escapeHtml(product.name)}</strong>
+</td>
           <td class="capitalize">${escapeHtml(product.category)}</td>
           <td>${money(product.price)}</td>
           <td><span class="${product.stock <= 5 ? "stock-low" : ""}">${product.stock}</span></td>
@@ -116,6 +213,7 @@
 
     function resetProductForm() {
       form.reset();
+      clearImagePreview();
       document.querySelector("#productId").value = "";
       document.querySelector("#productIcon").value = "🍽️";
       document.querySelector("#productAvailable").checked = true;
@@ -136,9 +234,38 @@
         isAvailable: document.querySelector("#productAvailable").checked
       };
       try {
-        await api(id ? `/api/admin/products/${id}` : "/api/admin/products", {
-          method: id ? "PUT" : "POST", body: JSON.stringify(product)
-        });
+      const savedProduct = await api(
+  id ? `/api/admin/products/${id}` : "/api/admin/products",
+  {
+    method: id ? "PUT" : "POST",
+    body: JSON.stringify(product)
+  }
+);
+
+const selectedImage = imageInput.files?.[0];
+
+if (selectedImage) {
+  const imageData = new FormData();
+  imageData.append("image", selectedImage);
+
+  try {
+    await api(`/api/admin/products/${savedProduct.id}/image`, {
+      method: "POST",
+      body: imageData
+    });
+  } catch (imageError) {
+    document.querySelector("#productId").value = savedProduct.id;
+    document.querySelector("#saveProductButton").textContent = "Save changes";
+
+    await refresh();
+
+    showNotice(
+      `Product details were saved, but the image upload failed: ${imageError.message}`
+    );
+
+    return;
+  }
+}
         resetProductForm();
         await refresh();
         showNotice(id ? "Product and inventory updated." : "Product added to the menu.", true);
@@ -160,6 +287,11 @@
       document.querySelector("#productIcon").value = product.icon;
       document.querySelector("#productStock").value = product.stock;
       document.querySelector("#productAvailable").checked = product.isAvailable;
+      if (product.imageUrl) {
+  showImagePreview(product.imageUrl);
+} else {
+  clearImagePreview();
+}
       document.querySelector("#saveProductButton").textContent = "Save changes";
       editCancel.hidden = false;
       form.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -233,7 +365,17 @@
       );
       productList.innerHTML = matching.length ? matching.map(product => `
         <article class="student-product-card">
-          <div class="student-product-icon" aria-hidden="true">${escapeHtml(product.icon)}</div>
+         <div class="student-product-icon" aria-hidden="true">
+  ${
+    safeProductImageUrl(product)
+      ? `<img
+          src="${safeProductImageUrl(product)}"
+          alt=""
+          loading="lazy"
+          style="width:100%;height:100%;object-fit:cover;border-radius:inherit;">`
+      : escapeHtml(product.icon || "🍽️")
+  }
+</div>
           <div class="student-product-info">
             <span class="product-category">${escapeHtml(product.category)}</span>
             <h3>${escapeHtml(product.name)}</h3><p>${escapeHtml(product.description)}</p>
